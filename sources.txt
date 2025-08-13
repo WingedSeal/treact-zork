@@ -2,4 +2,5 @@ https://www.ifarchive.org/if-archive/infocom/interpreters/frotz/dfrotz.zip
 
 https://www.ifarchive.org/indexes/if-archive/games/zcode/
 
+Games
 https://www.ifarchive.org/if-archive/games/zcode/zork_285.z5
