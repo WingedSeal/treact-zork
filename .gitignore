@@ -8,3 +8,6 @@ venv/
 
 frotz.exe
 *.z5
+
+access_key.json
+uv.lock
