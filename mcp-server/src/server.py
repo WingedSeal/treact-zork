@@ -39,22 +39,22 @@ mcp = FastMCP(
 
 
 @mcp.tool(name="zork-api")
-def call_zork(history: list[str], command: str) -> dict:
+def call_zork(history: list[str]) -> dict:
     """Sends a new command to Zork by including all previous commands to get the final outcome.
 
     Arguments:
-        history (list[str]): The history of commands sent to the Zork server.
-        command str: The new command
+        history (list[str]): The history of previous commands sent to the Zork server plus a new command.
 
     Returns:
         dict: The response from the Zork server.
     """
 
     try:
-        logger.info(f"Input: {history+[command]}")
+        logger.info(f"Input: {history}")
         result = httpx.post(
             url="http://localhost:8000/zork/zork285",
-            json={"commands": history + [command]},
+            json={"commands": history},
+            timeout=300
         )
         if result.status_code == 200:
             pprint.pp(result.json())

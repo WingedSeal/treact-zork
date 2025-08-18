@@ -59,9 +59,9 @@ class MCPClient:
         agent = create_react_agent(model=llm, tools=self.tools, debug=True)
         agent_response = await agent.ainvoke(
             {
-                "messages": "Please finsish the text-based game called Zork by calling tool"
+                "messages": "First time calling tool, just parse empty list. After that, win the game (Zork) by calling Zork api"
             },
-            {"recursion_limit": 1000},
+            {"recursion_limit": 500},
         )
         return agent_response
 
