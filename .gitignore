@@ -10,3 +10,11 @@ venv/
 frotz.exe
 *.z5
 
+*.env
+
+access_key.json
+uv.lock
+pyproject.toml
+.python-version
+
+logs/*

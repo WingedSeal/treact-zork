@@ -5,7 +5,7 @@ from threading import Thread
 from time import perf_counter
 from pathlib import Path
 
-ANSI_STRIPPER = re.compile(r'\x1b[\[\(]\??[0-9;]*[a-zA-Z]|\x1b=')
+ANSI_STRIPPER = re.compile(r"\x1b[\[\(]\??[0-9;]*[a-zA-Z]|\x1b=")
 
 FROTZ = "frotz"
 
@@ -15,8 +15,13 @@ class ZorkException(Exception):
 
 
 class Zork:
-    __slots__ = ("zork_file", "process", "reader_thread",
-                 "output_queue", "initial_response")
+    __slots__ = (
+        "zork_file",
+        "process",
+        "reader_thread",
+        "output_queue",
+        "initial_response",
+    )
 
     def __init__(self, zork_file: str) -> None:
         self.zork_file = zork_file
@@ -32,7 +37,7 @@ class Zork:
                 stderr=subprocess.PIPE,
                 text=True,
                 bufsize=0,
-                universal_newlines=True
+                universal_newlines=True,
             )
 
         except Exception as error:
@@ -46,12 +51,14 @@ class Zork:
     @staticmethod
     def is_frotz_exist():
         try:
-            result = subprocess.run([FROTZ, '--help'],
-                                    capture_output=True,
-                                    timeout=5)
-            if 'frotz' in result.stdout.decode().lower():
+            result = subprocess.run([FROTZ, "--help"], capture_output=True, timeout=5)
+            if "frotz" in result.stdout.decode().lower():
                 return True
-        except (subprocess.TimeoutExpired, subprocess.CalledProcessError, FileNotFoundError):
+        except (
+            subprocess.TimeoutExpired,
+            subprocess.CalledProcessError,
+            FileNotFoundError,
+        ):
             return False
         return False
 
@@ -63,10 +70,12 @@ class Zork:
             line = stdout.readline()
             if not line:
                 break
-            line = ANSI_STRIPPER.sub('', line)
+            line = ANSI_STRIPPER.sub("", line)
             self.output_queue.put(line.strip())
 
-    def _get_output(self, timeout_second: float = 10, *, input_to_strip: str | None = None) -> str:
+    def _get_output(
+        self, timeout_second: float = 10, *, input_to_strip: str | None = None
+    ) -> str:
         output_lines: list[str] = []
         start_time = perf_counter()
 
@@ -77,7 +86,7 @@ class Zork:
                     while line.startswith(">"):
                         line = line.lstrip(">").lstrip()
                     if line.startswith(input_to_strip):
-                        line = line[len(input_to_strip):].lstrip()
+                        line = line[len(input_to_strip) :].lstrip()
                     if not line:
                         continue
                 output_lines.append(line)
@@ -91,14 +100,13 @@ class Zork:
 
     def send_command(self, command: str) -> str:
         if not self.process or self.process.poll() is not None:
-            raise ZorkException(
-                "Sending command when the game is no longer running")
+            raise ZorkException("Sending command when the game is no longer running")
         if self.process is None:
             raise ZorkException("Process not found")
         stdin = self.process.stdin
         if stdin is None:
             raise ZorkException("stdin is None")
-        stdin.write(command + '\n')
+        stdin.write(command + "\n")
         stdin.flush()
 
         response = self._get_output(input_to_strip=command)
@@ -116,7 +124,7 @@ class Zork:
 
 
 class ZorkInstance:
-    __slots__ = ("zork", )
+    __slots__ = ("zork",)
 
     def __init__(self, zork_file: str) -> None:
         self.zork = Zork(zork_file)
