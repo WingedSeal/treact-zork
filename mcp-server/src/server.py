@@ -40,13 +40,35 @@ mcp = FastMCP(
 
 @mcp.tool(name="zork-api")
 def call_zork(history: list[str]) -> dict:
-    """Sends a new command to Zork by including all previous commands to get the final outcome.
+    """
+    Executes commands in the Zork text adventure game by maintaining complete command history.
+
+    This tool interfaces with a Zork game server, sending the entire sequence of commands
+    from game start to present. The server processes all commands sequentially to reach
+    the current game state, then returns the response to the latest command.
 
     Arguments:
-        history (list[str]): The history of previous commands sent to the Zork server plus a new command.
+        history (list[str]): Complete chronological list of all commands executed in this
+                            game session, including the new command to execute. Each string
+                            represents a single game command (e.g., 'look', 'north', 'take lamp').
+                            The server replays all commands to maintain proper game state.
 
     Returns:
-        dict: The response from the Zork server.
+        dict: Server response containing the game's output after executing the final command.
+            Typically includes room descriptions, item interactions, puzzle feedback,
+            combat results, or error messages for invalid commands.
+
+    Example Usage:
+        # First command in game
+        history = ['look']
+
+        # Adding movement command
+        history = ['look', 'north', 'take lamp']
+
+        # Server processes entire sequence and returns response to 'take lamp'
+
+    Note: Each call must include ALL previous commands to ensure the game state is
+        correctly reconstructed on the server side.
     """
 
     try:
@@ -54,7 +76,7 @@ def call_zork(history: list[str]) -> dict:
         result = httpx.post(
             url="http://localhost:8000/zork/zork285",
             json={"commands": history},
-            timeout=300
+            timeout=500,
         )
         if result.status_code == 200:
             pprint.pp(result.json())

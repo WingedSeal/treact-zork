@@ -22,3 +22,5 @@ python-dotenv==1.1.0
 typing-extensions==4.12.2
 
 sentence-transformers
+
+langchain-ollama
