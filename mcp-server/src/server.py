@@ -77,7 +77,7 @@ def zork_285_api_gen_key() -> dict:
     """
 
     try:
-        result = httpx.post(
+        result = httpx.get(
             url="http://localhost:8000/gen_key/zork285",
             timeout=300
         )
