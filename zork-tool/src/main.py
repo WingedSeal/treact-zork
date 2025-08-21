@@ -37,7 +37,7 @@ def zork_post(commands: list[str], zork_file: str) -> str:
 
 
 app = FastAPI()
-key_manager = KeyManager(["zork285"])
+app.state.key_manager = KeyManager(["zork285"])
 
 
 @app.post("/zork/zork285")
@@ -47,15 +47,16 @@ def zork285(request: CommandsRequest):
 
 @app.get("/gen_key/zork285")
 def gen_key_zork285():
-    return {"initial_response": zork_post([], "zork_285.z5"), "key": key_manager.gen_key("zork285")}
+    return {"initial_response": zork_post([], "zork_285.z5"), "key": app.state.key_manager.gen_key("zork285")}
 
 
 @app.post("/use_key/zork285")
 def use_key_zork285(request: CommandRequest):
-    new_key = key_manager.add_command("zork285", request.key, request.command)
+    new_key = app.state.key_manager.add_command(
+        "zork285", request.key, request.command)
     if not new_key:
         return {"key_valid": False, "response": "", "new_key": ""}
-    return {"key_valid": True, "response": zork_post(key_manager.get_history("zork285", request.key), "zork_285.z5"), "new_key": new_key}
+    return {"key_valid": True, "response": zork_post(app.state.key_manager.get_history("zork285", request.key), "zork_285.z5"), "new_key": new_key}
 
 
 if __name__ == "__main__":
