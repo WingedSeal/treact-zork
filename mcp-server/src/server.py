@@ -38,22 +38,74 @@ mcp = FastMCP(
 )
 
 
-@mcp.tool(name="zork-api")
-def call_zork(history: list[str]) -> dict:
-    """Sends a new command to Zork by including all previous commands to get the final outcome.
+# @mcp.tool(name="zork-285-api")
+# def zork_285_api(history: list[str]) -> dict:
+#     """Sends a new command to Zork by including all previous commands to get the final outcome.
+#
+#     Arguments:
+#         history (list[str]): The history of previous commands sent to the Zork server plus a new command.
+#
+#     Returns:
+#         dict: The response from the Zork server.
+#     """
+#
+#     try:
+#         logger.info(f"Input: {history}")
+#         result = httpx.post(
+#             url="http://localhost:8000/zork/zork285",
+#             json={"commands": history},
+#             timeout=300
+#         )
+#         if result.status_code == 200:
+#             pprint.pp(result.json())
+#             logger.info(result.json())
+#             return result.json()
+#         else:
+#             raise Exception("cannot call Zork")
+#     except httpx.HTTPError as e:
+#         pprint.pp(e)
+#         return {"response": f"Error: {str(e)}"}
 
-    Arguments:
-        history (list[str]): The history of previous commands sent to the Zork server plus a new command.
+@mcp.tool(name="zork-285-api-gen-key")
+def zork_285_api_gen_key() -> dict:
+    """
+    Generate a new Zork Session a new key to access the session
+
 
     Returns:
-        dict: The response from the Zork server.
+        dict: Session Key and Zork's initial response.
     """
 
     try:
-        logger.info(f"Input: {history}")
         result = httpx.post(
-            url="http://localhost:8000/zork/zork285",
-            json={"commands": history},
+            url="http://localhost:8000/gen_key/zork285",
+            timeout=300
+        )
+        if result.status_code == 200:
+            pprint.pp(result.json())
+            logger.info(result.json())
+            return result.json()
+        else:
+            raise Exception("cannot call Zork")
+    except httpx.HTTPError as e:
+        pprint.pp(e)
+        return {"key": "Error", "response": str(e)}
+
+
+@mcp.tool(name="zork-285-api-use-key")
+def zork_285_api_use_key(command: str, session_key: str) -> dict:
+    """
+    Using the session key obtained from "zork-285-api-gen-key", send new command to Zork
+
+
+    Returns:
+#       dict: The response from the Zork server.
+    """
+
+    try:
+        result = httpx.post(
+            url="http://localhost:8000/zork_key/zork285",
+            json={"command": command, "key": session_key},
             timeout=300
         )
         if result.status_code == 200:
