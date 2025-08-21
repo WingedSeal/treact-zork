@@ -1,3 +1,4 @@
+from key_manager import KEY_LENGTH, KeyManager, key_example
 import uvicorn
 from fastapi import FastAPI
 from zork_api import ZorkInstance
@@ -5,10 +6,22 @@ from pydantic import BaseModel, Field
 
 
 class CommandRequest(BaseModel):
+    command: str = Field(
+        default=[],
+        description="Command to execute in Zork",
+        examples=["look"]
+    )
+    key: str = Field(
+        description=f"{KEY_LENGTH} characters string for accessing Zork session",
+        examples=[key_example]
+    )
+
+
+class CommandsRequest(BaseModel):
     commands: list[str] = Field(
         default=[],
         description="List of commands to execute in Zork",
-        examples=["look", "go north", "take lamp"]
+        examples=[["look", "go north", "take lamp"]]
     )
 
 
@@ -24,11 +37,25 @@ def zork_post(commands: list[str], zork_file: str) -> str:
 
 
 app = FastAPI()
+key_manager = KeyManager()
 
 
 @app.post("/zork/zork285")
-def zork285(request: CommandRequest):
+def zork285(request: CommandsRequest):
     return {"response": zork_post(request.commands, "zork_285.z5")}
+
+
+@app.get("/gen_key/zork285")
+def gen_key_zork285():
+    return {"initial_response": zork_post([], "zork_285.z5"), "key": key_manager.gen_key("zork285")}
+
+
+@app.post("/zork_key/zork285")
+def key_zork285(request: CommandRequest):
+    success = key_manager.add_command("zork285", request.key, request.command)
+    if not success:
+        return {"key_valid": False, "response": ""}
+    return {"key_valid": True, "response": zork_post(key_manager.get_history("zork285", request.key), "zork_285.z5")}
 
 
 if __name__ == "__main__":
