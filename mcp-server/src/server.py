@@ -104,7 +104,7 @@ def zork_285_api_use_key(command: str, session_key: str) -> dict:
 
     try:
         result = httpx.post(
-            url="http://localhost:8000/zork_key/zork285",
+            url="http://localhost:8000/use_key/zork285",
             json={"command": command, "key": session_key},
             timeout=300
         )

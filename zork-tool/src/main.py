@@ -50,8 +50,8 @@ def gen_key_zork285():
     return {"initial_response": zork_post([], "zork_285.z5"), "key": key_manager.gen_key("zork285")}
 
 
-@app.post("/zork_key/zork285")
-def key_zork285(request: CommandRequest):
+@app.post("/use_key/zork285")
+def use_key_zork285(request: CommandRequest):
     success = key_manager.add_command("zork285", request.key, request.command)
     if not success:
         return {"key_valid": False, "response": ""}
