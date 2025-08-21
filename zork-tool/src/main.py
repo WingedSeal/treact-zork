@@ -52,10 +52,10 @@ def gen_key_zork285():
 
 @app.post("/use_key/zork285")
 def use_key_zork285(request: CommandRequest):
-    success = key_manager.add_command("zork285", request.key, request.command)
-    if not success:
-        return {"key_valid": False, "response": ""}
-    return {"key_valid": True, "response": zork_post(key_manager.get_history("zork285", request.key), "zork_285.z5")}
+    new_key = key_manager.add_command("zork285", request.key, request.command)
+    if not new_key:
+        return {"key_valid": False, "response": "", "new_key": ""}
+    return {"key_valid": True, "response": zork_post(key_manager.get_history("zork285", request.key), "zork_285.z5"), "new_key": new_key}
 
 
 if __name__ == "__main__":

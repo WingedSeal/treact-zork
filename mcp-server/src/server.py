@@ -95,11 +95,12 @@ def zork_285_api_gen_key() -> dict:
 @mcp.tool(name="zork-285-api-use-key")
 def zork_285_api_use_key(command: str, session_key: str) -> dict:
     """
-    Using the session key obtained from "zork-285-api-gen-key", send new command to Zork
+    Using the session key obtained from "zork-285-api-gen-key", send new command to Zork.
+    However, the key can only be used once. But using it generate a new key that can be used.
 
 
     Returns:
-#       dict: The response from the Zork server.
+#       dict: The response from the Zork server and a new session key.
     """
 
     try:
