@@ -23,7 +23,7 @@ class KeyData:
 
 class KeyManager:
     def __init__(self) -> None:
-        self.keys: dict[str, dict[str, KeyData]]
+        self.keys: dict[str, dict[str, KeyData]] = {}
 
     def gen_key(self, game: str, old_key_data: KeyData | None = None) -> str:
         while True:
