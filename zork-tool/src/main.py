@@ -37,7 +37,7 @@ def zork_post(commands: list[str], zork_file: str) -> str:
 
 
 app = FastAPI()
-key_manager = KeyManager()
+key_manager = KeyManager(["zork285"])
 
 
 @app.post("/zork/zork285")

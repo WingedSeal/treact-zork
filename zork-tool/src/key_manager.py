@@ -22,8 +22,8 @@ class KeyData:
 
 
 class KeyManager:
-    def __init__(self) -> None:
-        self.keys: dict[str, dict[str, KeyData]] = {}
+    def __init__(self, games: list[str]) -> None:
+        self.keys: dict[str, dict[str, KeyData]] = {game: {} for game in games}
 
     def gen_key(self, game: str, old_key_data: KeyData | None = None) -> str:
         while True:
