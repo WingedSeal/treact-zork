@@ -37,42 +37,50 @@ mcp = FastMCP(
     name="mcp-server", host=os.getenv("SERVER_IP"), port=os.getenv("SERVER_PORT")
 )
 
+history = []
+
 
 @mcp.tool(name="zork-api")
-def call_zork(history: list[str]) -> dict:
+def call_zork(command: str) -> dict:
     """
-    Executes commands in the Zork text adventure game by maintaining complete command history.
+    Executes a single command in the Zork text adventure game with local history management.
 
-    This tool interfaces with a Zork game server, sending the entire sequence of commands
-    from game start to present. The server processes all commands sequentially to reach
-    the current game state, then returns the response to the latest command.
+    This tool interfaces with a Zork game server by sending individual commands. The game
+    state is maintained locally on the client side, so each command builds upon the previous
+    game state without needing to replay the entire command history.
 
     Arguments:
-        history (list[str]): Complete chronological list of all commands executed in this
-                            game session, including the new command to execute. Each string
-                            represents a single game command (e.g., 'look', 'north', 'take lamp').
-                            The server replays all commands to maintain proper game state.
+        command (str): A single Zork game command to execute. This should be a valid game
+                      command such as movement ('north', 'south'), item interaction
+                      ('take lamp', 'drop sword'), actions ('open door', 'kill troll'),
+                      or utility commands ('look', 'inventory', 'score').
 
     Returns:
-        dict: Server response containing the game's output after executing the final command.
-            Typically includes room descriptions, item interactions, puzzle feedback,
-            combat results, or error messages for invalid commands.
+        dict: Server response containing the game's output after executing the command.
+              Typically includes room descriptions, item interactions, puzzle feedback,
+              combat results, or error messages for invalid commands.
 
     Example Usage:
         # First command in game
-        history = ['look']
+        command = 'look'
 
-        # Adding movement command
-        history = ['look', 'north', 'take lamp']
+        # Movement command
+        command = 'north'
 
-        # Server processes entire sequence and returns response to 'take lamp'
+        # Item interaction
+        command = 'take lamp'
 
-    Note: Each call must include ALL previous commands to ensure the game state is
-        correctly reconstructed on the server side.
+        # Each command executes on the current game state
+
+    Note: The game state persists between commands on the server side, so there's no need
+          to maintain or send command history. Each command operates on the current state
+          resulting from all previous commands executed in this session.
     """
 
     try:
+        history.append(command)
         logger.info(f"Input: {history}")
+
         result = httpx.post(
             url="http://localhost:8000/zork/zork285",
             json={"commands": history},

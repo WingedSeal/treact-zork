@@ -28,6 +28,7 @@ if not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
 gemini = ChatGoogleGenerativeAI(
     model="gemini-2.5-flash",
     temperature=0,
+    # max_output_tokens=8000,
 )
 
 llama = ChatOllama(model="llama3.1", temperature=0)
@@ -49,6 +50,22 @@ class response(BaseModel):
             description="True if the Zork game has been successfully completed by collecting all 20 treasures "
             "and achieving victory. False if the game is still in progress or if the player has died. "
             "Only set to True when the game explicitly indicates victory/winning condition met."
+        ),
+    ]
+    current_status: Annotated[
+        str,
+        Field(
+            description="Current game state description including: current location, recent game response, "
+            "inventory status, immediate objectives, or any important game feedback. "
+            "This helps track progress and inform the next decision."
+        ),
+    ]
+    next_action_planned: Annotated[
+        str,
+        Field(
+            description="The specific next command you plan to execute in the Zork game. "
+            "Should be a valid Zork command like 'north', 'take sword', 'examine door', etc. "
+            "This ensures continuous gameplay progression."
         ),
     ]
 
@@ -83,31 +100,18 @@ class MCPClient:
     async def talk_with_zork(self, history: list[str], llm: Any):
 
         template = """
-        You are playing Zork, a text adventure game. Your goal is to WIN by collecting all 20 treasures.
-
-        COMMAND HISTORY: {messages}
-
-        ## MANDATORY FIRST ACTION ##
-        You MUST immediately call the Zork tool with this exact input: {messages}
-
-        If the command history is [] (empty list), you MUST call the Zork tool with: []
-        If the command history has commands, you MUST call the Zork tool with those exact commands.
-
+        You are playing Zork, a text adventure game. Your goal is to **WIN** by collecting all 20 treasures.
+        In the beginning, 'Welcome to adventure.\nYou are in an open field west of a big white house, with a closed, locked\nfront door.'
+        
         ## YOUR REQUIRED STEPS ##
-        STEP 1: Call Zork tool with input: {messages}
+        STEP 1: Start the game by Calling Zork tool with proper command
         STEP 2: Read the game response
-        STEP 3: Add ONE new command to the history
-        STEP 4: Call Zork tool again with the expanded history
+        STEP 3: Understand the current scenarion and come up with a new command
+        STEP 4: Call Zork tool again with the new command
         STEP 5: Repeat steps 2-4 until victory
-
-        ###Important###
-        DO NOT MODIFY COMMAND HISTORY
         
         ## CRITICAL RULES ##
-        - Your FIRST action must be calling the Zork tool
-        - NEVER skip the first tool call
         - NEVER analyze without acting first
-        - Each response MUST include at least one Zork tool call
         - Keep playing until you collect all 20 treasures
 
         ## COMMAND EXAMPLES ##
@@ -130,6 +134,7 @@ class MCPClient:
             response_format=response,
             debug=True,
         )
+
         agent_response = await agent.ainvoke(
             input={"messages": str(history)},
             config={"recursion_limit": 5000},
@@ -167,18 +172,12 @@ client = MCPClient()
 
 async def main():
     await client.connect_to_server()
-    count = 0
-    complete = False
-    final_result = []
-    while count <= 10 and (not complete):
-        result = await client.talk_with_zork(history=final_result, llm=llama)
-        pprint.pp(result["structured_response"])
-        print(result["structured_response"].command_history)
-        print(result["structured_response"].game_completed)
-        final_result = result["structured_response"].command_history
-        complete = result["structured_response"].game_completed
-        count += 1
-    print(final_result)
+
+    result = await client.talk_with_zork(history=[], llm=gemini)
+    pprint.pp(result["structured_response"])
+    print(result["structured_response"].command_history)
+    print(result["structured_response"].game_completed)
+
     await client.cleanup()
     return
 
