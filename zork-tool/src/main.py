@@ -7,13 +7,11 @@ from pydantic import BaseModel, Field
 
 class CommandRequest(BaseModel):
     command: str = Field(
-        default=[],
-        description="Command to execute in Zork",
-        examples=["look"]
+        default=[], description="Command to execute in Zork", examples=["look"]
     )
     key: str = Field(
         description=f"{KEY_LENGTH} characters string for accessing Zork session",
-        examples=[key_example]
+        examples=[key_example],
     )
 
 
@@ -21,7 +19,7 @@ class CommandsRequest(BaseModel):
     commands: list[str] = Field(
         default=[],
         description="List of commands to execute in Zork",
-        examples=[["look", "go north", "take lamp"]]
+        examples=[["look", "go north", "take lamp"]],
     )
 
 
@@ -47,16 +45,24 @@ def zork285(request: CommandsRequest):
 
 @app.get("/gen_key/zork285")
 def gen_key_zork285():
-    return {"initial_response": zork_post([], "zork_285.z5"), "key": app.state.key_manager.gen_key("zork285")}
+    return {
+        "initial_response": zork_post([], "zork_285.z5"),
+        "key": app.state.key_manager.gen_key("zork285"),
+    }
 
 
 @app.post("/use_key/zork285")
 def use_key_zork285(request: CommandRequest):
-    new_key = app.state.key_manager.add_command(
-        "zork285", request.key, request.command)
+    new_key = app.state.key_manager.add_command("zork285", request.key, request.command)
     if not new_key:
         return {"key_valid": False, "response": "", "new_key": ""}
-    return {"key_valid": True, "response": zork_post(app.state.key_manager.get_history("zork285", request.key), "zork_285.z5"), "new_key": new_key}
+    return {
+        "key_valid": True,
+        "response": zork_post(
+            app.state.key_manager.get_history("zork285", new_key), "zork_285.z5"
+        ),
+        "new_key": new_key,
+    }
 
 
 if __name__ == "__main__":
