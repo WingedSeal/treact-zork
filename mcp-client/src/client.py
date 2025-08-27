@@ -35,15 +35,6 @@ llama = ChatOllama(model="llama3.1", temperature=0)
 
 
 class response(BaseModel):
-    command_history: Annotated[
-        list[str],
-        Field(
-            description="Complete chronological list of ALL Zork commands executed in this session, "
-            "starting from the very first command and ending with the most recent command. "
-            "Each string represents a single game command (e.g., 'look', 'take lamp', 'north'). "
-            "This must include every command from game start to current state."
-        ),
-    ]
     game_completed: Annotated[
         bool,
         Field(
@@ -60,12 +51,11 @@ class response(BaseModel):
             "This helps track progress and inform the next decision."
         ),
     ]
-    next_action_planned: Annotated[
-        str,
+
+    score: Annotated[
+        int,
         Field(
-            description="The specific next command you plan to execute in the Zork game. "
-            "Should be a valid Zork command like 'north', 'take sword', 'examine door', etc. "
-            "This ensures continuous gameplay progression."
+            description="Current score in the Zork game, representing the number of treasures collected so far."
         ),
     ]
 
@@ -100,32 +90,28 @@ class MCPClient:
     async def talk_with_zork(self, history: list[str], llm: Any):
 
         template = """
-        You are playing Zork, a text adventure game. Your goal is to **WIN** by collecting all 20 treasures.
-        In the beginning, 'Welcome to adventure.\nYou are in an open field west of a big white house, with a closed, locked\nfront door.'
-        
+        You are playing Zork, a text adventure game. Your goal is to collect as many treasures as possible.
+
         ## YOUR REQUIRED STEPS ##
-        STEP 1: Start the game by Calling Zork tool with proper command
-        STEP 2: Read the game response
-        STEP 3: Understand the current scenarion and come up with a new command
-        STEP 4: Call Zork tool again with the new command
-        STEP 5: Repeat steps 2-4 until victory
+        STEP 1: Start the game by calling zork-285-api-gen-key tool to get the generated key
+        STEP 2: Use the generated key with the proper command as parameters for zork-285-api-use-key tool
+        STEP 3: Read the game response
+        STEP 4: Understand the current scenarion and come up with a new command
+        STEP 5: Call Zork tool again with the new command and the new generated key
+        STEP 6: Repeat steps 2-5 for 20 times, then proceed to quit the game with the current status
         
-        ## CRITICAL RULES ##
-        - NEVER analyze without acting first
-        - Keep playing until you collect all 20 treasures
-
-        ## COMMAND EXAMPLES ##
-        First game start: 'look'
-        Movement: 'north', 'south', 'east', 'west', 'up', 'down'  
-        Items: 'take lamp', 'drop sack', 'inventory', 'examine object'
-        Actions: 'open door', 'turn on lamp', 'kill troll', 'move rug'
-
-        ## ERROR RECOVERY ##
-        - "I don't know that word" → Try different phrasing
-        - "I don't know how to do that" → Use different command
-        - Darkness → Find light source ('take lamp', 'turn on lamp')
-        - Blocked → Look for keys or alternative paths
+        ## How to track current score ##
+        - Input command 'score' to get the current score
         
+        ## How to quit the game ##
+        - Input command 'quit' to get the current score and confirmation whether to quit the game
+        
+        ### Important ###
+        - The first command should be 'help' to understand the game mechanics and available commands.
+        - Keep tracking the game state and your inventory and also history commands
+        - Keep tracking the score and current steps
+        - After 20 steps of calling tool, proceed to quit the game with the current status
+
         """
         agent = create_react_agent(
             model=llm,
@@ -175,8 +161,9 @@ async def main():
 
     result = await client.talk_with_zork(history=[], llm=gemini)
     pprint.pp(result["structured_response"])
-    print(result["structured_response"].command_history)
     print(result["structured_response"].game_completed)
+    print(result["structured_response"].current_status)
+    print(result["structured_response"].score)
 
     await client.cleanup()
     return
