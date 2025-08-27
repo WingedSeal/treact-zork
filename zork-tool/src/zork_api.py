@@ -23,15 +23,20 @@ class Zork:
         "initial_response",
     )
 
-    def __init__(self, zork_file: str) -> None:
+    def __init__(self, zork_file: str, seed: str | None = None) -> None:
         self.zork_file = zork_file
         if not Path(zork_file).is_file():
             raise ZorkException(f"{zork_file} is not a file.")
         if not Zork.is_frotz_exist():
             raise ZorkException("'frotz' command not found.")
+
+        if seed is None:
+            args = [FROTZ, self.zork_file]
+        else:
+            args = [FROTZ, "-s", seed, self.zork_file]
         try:
             self.process = subprocess.Popen(
-                [FROTZ, self.zork_file],
+                args,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -51,7 +56,8 @@ class Zork:
     @staticmethod
     def is_frotz_exist():
         try:
-            result = subprocess.run([FROTZ, "--help"], capture_output=True, timeout=5)
+            result = subprocess.run(
+                [FROTZ, "--help"], capture_output=True, timeout=5)
             if "frotz" in result.stdout.decode().lower():
                 return True
         except (
@@ -86,7 +92,7 @@ class Zork:
                     while line.startswith(">"):
                         line = line.lstrip(">").lstrip()
                     if line.startswith(input_to_strip):
-                        line = line[len(input_to_strip) :].lstrip()
+                        line = line[len(input_to_strip):].lstrip()
                     if not line:
                         continue
                 output_lines.append(line)
@@ -100,7 +106,8 @@ class Zork:
 
     def send_command(self, command: str) -> str:
         if not self.process or self.process.poll() is not None:
-            raise ZorkException("Sending command when the game is no longer running")
+            raise ZorkException(
+                "Sending command when the game is no longer running")
         if self.process is None:
             raise ZorkException("Process not found")
         stdin = self.process.stdin
@@ -126,8 +133,8 @@ class Zork:
 class ZorkInstance:
     __slots__ = ("zork",)
 
-    def __init__(self, zork_file: str) -> None:
-        self.zork = Zork(zork_file)
+    def __init__(self, zork_file: str, seed: str | None = None) -> None:
+        self.zork = Zork(zork_file, seed)
 
     def __enter__(self):
         return self.zork
