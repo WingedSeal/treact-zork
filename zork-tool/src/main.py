@@ -7,6 +7,8 @@ from zork_api import ZorkInstance
 from pydantic import BaseModel, Field
 from zork_dict import extract_dictionary_from_file
 
+GAME_DIRECTORY = "games/"
+
 
 class CommandRequest(BaseModel):
     command: str = Field(
@@ -29,9 +31,9 @@ class CommandsRequest(BaseModel):
 
 def zork_post(commands: list[str], zork_file: str, seed: str) -> str:
     if not commands:
-        with ZorkInstance("games/" + zork_file, seed) as zork:
+        with ZorkInstance(GAME_DIRECTORY + zork_file, seed) as zork:
             return zork.initial_response
-    with ZorkInstance("games/" + zork_file, seed) as zork:
+    with ZorkInstance(GAME_DIRECTORY + zork_file, seed) as zork:
         response = ""
         for command in commands:
             response = zork.send_command(command)
@@ -62,8 +64,8 @@ def create_endpoint(game: str, game_file: str):
 
     @app.get(f"/dict/{game}")
     def get_dict():
-        zdict = extract_dictionary_from_file(Path(game_file))
-        return {"words": [{"word": word, "word_types": word_types} for word, word_types in zdict]}
+        zdict = extract_dictionary_from_file(Path(GAME_DIRECTORY + game_file))
+        return {"dictonary": [{"word": word, "word_types": word_types} for word, word_types in zdict]}
 
 
 for game, game_file in GAMES.items():
