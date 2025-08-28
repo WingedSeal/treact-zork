@@ -63,9 +63,12 @@ def create_endpoint(game: str, game_file: str):
         return {"key_valid": True, "response": zork_post(history, game_file, seed), "new_key": new_key}
 
     @app.get(f"/dict/{game}")
-    def get_dict():
+    def get_dict(types: bool = False):
         zdict = extract_dictionary_from_file(Path(GAME_DIRECTORY + game_file))
-        return {"dictonary": [{"word": word, "word_types": word_types} for word, word_types in zdict]}
+        if types:
+            return {"dictonary": [{"word": word, "word_types": word_types} for word, word_types in zdict]}
+        else:
+            return {"words": [word for word, word_types in zdict]}
 
 
 for game, game_file in GAMES.items():
