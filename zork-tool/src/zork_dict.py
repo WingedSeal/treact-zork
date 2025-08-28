@@ -1,6 +1,7 @@
 from enum import Enum, auto
 from typing import Iterable
 from pathlib import Path
+from functools import cache
 
 
 HEADER_DICT_ADDR = 0x08
@@ -90,23 +91,23 @@ def decode_zstring(
     return "".join(result_string)
 
 
-def get_word_type(flags: int) -> set[str]:
+def get_word_type(flags: int) -> list[str]:
     """Interpret dictionary flags"""
-    types: set[str] = set()
+    types: list[str] = []
     if flags & 0b0100_0000:
-        types.add("verb")
+        types.append("verb")
     if flags & 0b0010_0000:
-        types.add("adj")
+        types.append("adj")
     if flags & 0b0001_0000:
-        types.add("dir")
+        types.append("dir")
     if flags & 0b0000_1000:
-        types.add("prep")
+        types.append("prep")
     if not types:
-        types.add("noun?")
+        types.append("noun?")
     return types
 
 
-def extract_dictionary(zfile_bytes: bytes) -> Iterable[tuple[str, set[str]]]:
+def extract_dictionary(zfile_bytes: bytes) -> Iterable[tuple[str, list[str]]]:
     abbreviations = load_abbreviations(zfile_bytes)
     dict_addr = read_word(zfile_bytes, HEADER_DICT_ADDR)
     seperator_count = zfile_bytes[dict_addr]
@@ -124,7 +125,8 @@ def extract_dictionary(zfile_bytes: bytes) -> Iterable[tuple[str, set[str]]]:
         yield word, get_word_type(flags)
 
 
-def extract_dictionary_from_file(zfile: Path) -> Iterable[tuple[str, set[str]]]:
+@cache
+def extract_dictionary_from_file(zfile: Path) -> list[tuple[str, list[str]]]:
     with zfile.open("rb") as f:
         data = f.read()
-    return extract_dictionary(data)
+    return list(extract_dictionary(data))
