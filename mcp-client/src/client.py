@@ -111,13 +111,13 @@ class MCPClient:
             {history}
 
             ## YOUR REQUIRED STEPS ##
-            STEP 1: Start the game by calling zork-285-api-gen-key tool to get the generated key
-            STEP 2: Use the generated key with the proper command as parameters for zork-285-api-use-key tool
-            STEP 3: Read the game response
-            STEP 4: Understand the current scenarion and come up with a new command
-            STEP 5: Call Zork tool again with the new command and the new generated key
-            STEP 6: Repeat steps 2-5 for {maximum_step} times, then proceed to quit the game with the current status
-            
+            STEP 1: Start the game by calling zork-285-api-gen-key tool to get the generated key (first time only)
+            STEP 2: call zork-285-api-get-dict tool to get the game dictionary (first time only)
+            STEP 3: Use the generated key with the proper command as parameters for zork-285-api-use-key tool
+            STEP 4: Read the game response
+            STEP 5: Then call Zork tool again with the new command and the new generated key
+            STEP 6: Repeat steps 3-5 for {maximum_step} times, then proceed to quit the game with the current status
+
             ## How to track current score ##
             - Input command 'score' to get the current score
             
@@ -129,6 +129,7 @@ class MCPClient:
             - Keep tracking the game state and your inventory and also history commands
             - Keep tracking the score and current steps
             - when the current step : {current_step} equals to the maximum number of steps: {maximum_step}, you must quit the game
+            - When encountering troll, avoid the fight and find the sword first.
 
             """
             prompt = ChatPromptTemplate.from_template(template)
@@ -206,12 +207,12 @@ class MCPClient:
                 You are playing Zork, a text adventure game. Your goal is to collect as many treasures as possible.
 
                 ## YOUR REQUIRED STEPS ##
-                STEP 1: Start the game by calling zork-285-api-gen-key tool to get the generated key
-                STEP 2: Use the generated key with the proper command as parameters for zork-285-api-use-key tool
-                STEP 3: Read the game response
-                STEP 4: Understand the current scenarion and come up with a new command
-                STEP 5: Call Zork tool again with the new command and the new generated key
-                STEP 6: Repeat steps 2-5 for 20 times, then proceed to quit the game with the current status
+                STEP 1: Start the game by calling zork-285-api-gen-key tool to get the generated key (first time only)
+                STEP 2: call zork-285-api-get-dict tool to get the game dictionary (first time only)
+                STEP 3: Use the generated key with the proper command as parameters for zork-285-api-use-key tool
+                STEP 4: Read the game response
+                STEP 5: Then call Zork tool again with the new command and the new generated key
+                STEP 6: Repeat steps 3-5 for 20 times, then proceed to quit the game with the current status
                 
                 ## How to track current score ##
                 - Input command 'score' to get the current score
@@ -224,6 +225,7 @@ class MCPClient:
                 - Keep tracking the game state and your inventory and also history commands
                 - Keep tracking the score and current steps
                 - After 20 steps of calling tool, proceed to quit the game with the current status
+                - When encountering troll, avoid the fight and find the sword first.
 
                 """
                 agent = create_react_agent(
