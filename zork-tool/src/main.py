@@ -1,9 +1,13 @@
+from pathlib import Path
 from typing import cast
 from key_manager import KEY_LENGTH, KeyManager, key_example
 import uvicorn
 from fastapi import FastAPI
 from zork_api import ZorkInstance
 from pydantic import BaseModel, Field
+from zork_dict import extract_dictionary_from_file
+
+GAME_DIRECTORY = "games/"
 
 
 class CommandRequest(BaseModel):
@@ -27,36 +31,48 @@ class CommandsRequest(BaseModel):
 
 def zork_post(commands: list[str], zork_file: str, seed: str) -> str:
     if not commands:
-        with ZorkInstance("games/" + zork_file, seed) as zork:
+        with ZorkInstance(GAME_DIRECTORY + zork_file, seed) as zork:
             return zork.initial_response
-    with ZorkInstance("games/" + zork_file, seed) as zork:
+    with ZorkInstance(GAME_DIRECTORY + zork_file, seed) as zork:
         response = ""
         for command in commands:
             response = zork.send_command(command)
     return response
 
 
+GAMES = {"zork285": "zork_285.z5"}
 app = FastAPI()
-app.state.key_manager = KeyManager(["zork285"])
+app.state.key_manager = KeyManager(list(GAMES.keys()))
 
 
-@app.get("/gen_key/zork285")
-def gen_key_zork285():
-    key, seed = cast(KeyManager, app.state.key_manager).gen_key("zork285")
-    return {"initial_response": zork_post([], "zork_285.z5", seed), "key": key}
+def create_endpoint(game: str, game_file: str):
+    @app.get(f"/gen_key/{game}")
+    def gen_key():
+        key, seed = cast(KeyManager, app.state.key_manager).gen_key(game)
+        return {"initial_response": zork_post([], game_file, seed), "key": key}
+
+    @app.post(f"/use_key/{game}")
+    def use_key(request: CommandRequest):
+        key_manager = cast(KeyManager, app.state.key_manager)
+        new_key, seed = key_manager.add_command(
+            game, request.key, request.command)
+        if not new_key:
+            return {"key_valid": False, "response": "", "new_key": ""}
+        history = key_manager.get_history(
+            game, new_key)
+        return {"key_valid": True, "response": zork_post(history, game_file, seed), "new_key": new_key}
+
+    @app.get(f"/dict/{game}")
+    def get_dict(types: bool = False):
+        zdict = extract_dictionary_from_file(Path(GAME_DIRECTORY + game_file))
+        if types:
+            return {"dictonary": [{"word": word, "word_types": word_types} for word, word_types in zdict]}
+        else:
+            return {"words": [word for word, word_types in zdict]}
 
 
-@app.post("/use_key/zork285")
-def use_key_zork285(request: CommandRequest):
-    key_manager = cast(KeyManager, app.state.key_manager)
-    new_key, seed = key_manager.add_command(
-        "zork285", request.key, request.command)
-    if not new_key:
-        return {"key_valid": False, "response": "", "new_key": ""}
-    history = key_manager.get_history(
-        "zork285", new_key)
-    return {"key_valid": True, "response": zork_post(history, "zork_285.z5", seed), "new_key": new_key}
-
+for game, game_file in GAMES.items():
+    create_endpoint(game, game_file)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="localhost", port=8000)
