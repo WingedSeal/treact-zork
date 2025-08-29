@@ -6,15 +6,40 @@ from fastapi import FastAPI
 from zork_api import ZorkInstance
 from pydantic import BaseModel, Field
 from zork_dict import extract_dictionary_from_file
+import os
+import logging
+import datetime
+
+
+log_dir = "./zork-tool_logs"
+if not os.path.exists(log_dir):
+    os.makedirs(log_dir)
+
+
+def setup_logger():
+    logging.basicConfig(
+        level=logging.INFO,
+        handlers=[
+            logging.FileHandler(
+                f"{log_dir}/chatbot_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.log",
+                mode="a",
+                encoding="utf-8",
+            )
+        ],
+    )
+
+    logger = logging.getLogger(__name__)
+    return logger
+
+
+logger = setup_logger()
+
 
 GAME_DIRECTORY = "games/"
 
 
 class CommandRequest(BaseModel):
-    command: str = Field(
-        description="Command to execute in Zork",
-        examples=["look"]
-    )
+    command: str = Field(description="Command to execute in Zork", examples=["look"])
     key: str = Field(
         description=f"{KEY_LENGTH} characters string for accessing Zork session",
         examples=[key_example],
@@ -48,25 +73,39 @@ app.state.key_manager = KeyManager(list(GAMES.keys()))
 def create_endpoint(game: str, game_file: str):
     @app.get(f"/gen_key/{game}")
     def gen_key():
+        logger.info("Gen Key")
         key, seed = cast(KeyManager, app.state.key_manager).gen_key(game)
+        logger.info(f"Generated key: {key} for game: {game} with seed {seed}")
         return {"initial_response": zork_post([], game_file, seed), "key": key}
 
     @app.post(f"/use_key/{game}")
     def use_key(request: CommandRequest):
+        logger.info("Use Key")
+        logger.info(f"Using key: {request.key} for game: {game}")
         key_manager = cast(KeyManager, app.state.key_manager)
-        new_key, seed = key_manager.add_command(
-            game, request.key, request.command)
+        new_key, seed = key_manager.add_command(game, request.key, request.command)
+        logger.info(f"New Key: {new_key} and Seed: {seed}")
         if not new_key:
             return {"key_valid": False, "response": "", "new_key": ""}
-        history = key_manager.get_history(
-            game, new_key)
-        return {"key_valid": True, "response": zork_post(history, game_file, seed), "new_key": new_key}
+        history = key_manager.get_history(game, new_key)
+        logger.info(f"History for new key: {history}")
+        return {
+            "key_valid": True,
+            "response": zork_post(history, game_file, seed),
+            "new_key": new_key,
+        }
 
     @app.get(f"/dict/{game}")
     def get_dict(types: bool = False):
         zdict = extract_dictionary_from_file(Path(GAME_DIRECTORY + game_file))
+        logger.info(f"Extracted dictionary {zdict} for game {game} with types={types}")
         if types:
-            return {"dictonary": [{"word": word, "word_types": word_types} for word, word_types in zdict]}
+            return {
+                "dictonary": [
+                    {"word": word, "word_types": word_types}
+                    for word, word_types in zdict
+                ]
+            }
         else:
             return {"words": [word for word, word_types in zdict]}
 
