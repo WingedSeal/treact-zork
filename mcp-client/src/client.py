@@ -330,7 +330,7 @@ client = MCPClient()
 
 async def main():
     await client.connect_to_server()
-    current = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    current = datetime.datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
     fields = [
         "game_completed",
         "current_status",
@@ -339,8 +339,9 @@ async def main():
         "maximum_step",
     ]
     model = llama
+    print(model.model)
     with open(
-        f"{test_result}/result_{model.model.replace('/','-')}_{current}.csv",
+        f"{test_result}/result_{model.model.replace('/','-').replace(':', '-')}_{current}.csv",
         "w",
         newline="",
     ) as csvfile:
@@ -351,6 +352,8 @@ async def main():
             result = await client.talk_with_zork(
                 history=[], model=model, category="react_implement", debug=True
             )
+            print(result)
+            print(result["structured_response"])
             print(result["structured_response"].game_completed)
             print(result["structured_response"].current_status)
             print(result["structured_response"].score)
@@ -367,7 +370,7 @@ async def main():
             ]
             pprint.pp(f"Iteration {i+1} completed.")
             with open(
-                f"{test_result}/result_{model.model.replace('/','-')}_{current}.csv",
+                f"{test_result}/result_{model.model.replace('/','-').replace(':', '-')}_{current}.csv",
                 "a",
                 newline="",
             ) as csvfile:
