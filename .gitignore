@@ -17,7 +17,7 @@ uv.lock
 pyproject.toml
 .python-version
 
-logs/*
+mcp-server_logs/*
 
 zork-tool_logs/*
 
