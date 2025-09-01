@@ -32,14 +32,15 @@ test_result = "./test_result"
 if not os.path.exists(test_result):
     os.makedirs(test_result)
 
-if not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./mcp-client/access_key.json"
+if os.path.exists("./mcp-client/access_key.json"):
+    if not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./mcp-client/access_key.json"
 
-gemini = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash",
-    temperature=0,
-    # max_output_tokens=8000,
-)
+    gemini = ChatGoogleGenerativeAI(
+        model="gemini-2.5-flash",
+        temperature=0,
+        # max_output_tokens=8000,
+    )
 
 llama = ChatOllama(model="llama3.1", temperature=0)
 
@@ -337,7 +338,7 @@ async def main():
         "current_step",
         "maximum_step",
     ]
-    model = gemini
+    model = llama
     with open(
         f"{test_result}/result_{model.model.replace('/','-')}_{current}.csv",
         "w",
