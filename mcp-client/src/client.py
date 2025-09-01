@@ -24,6 +24,7 @@ from typing_extensions import TypedDict
 import csv
 import datetime
 from tqdm import tqdm
+from mcp.types import TextContent
 
 load_dotenv("./mcp-client/.env")
 
@@ -31,14 +32,14 @@ test_result = "./test_result"
 if not os.path.exists(test_result):
     os.makedirs(test_result)
 
-# if not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
-#     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./mcp-client/access_key.json"
+if not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./mcp-client/access_key.json"
 
-# gemini = ChatGoogleGenerativeAI(
-#     model="gemini-2.5-flash",
-#     temperature=0,
-#     # max_output_tokens=8000,
-# )
+gemini = ChatGoogleGenerativeAI(
+    model="gemini-2.5-flash",
+    temperature=0,
+    # max_output_tokens=8000,
+)
 
 llama = ChatOllama(model="llama3.1", temperature=0)
 
@@ -71,12 +72,12 @@ class response(BaseModel):
 
 class State(TypedDict):
     structured_response: Any
-    history: list[Any] = []
+    history: list[Any]
     llm: Any
-    tool_calls: list[Any] = []
-    current_step: int = 0
-    maximum_step: int = 50
-    debug: bool = False
+    tool_calls: list[Any]
+    current_step: int
+    maximum_step: int
+    debug: bool
 
 
 class MCPClient:
@@ -171,6 +172,7 @@ class MCPClient:
                 return "END"
 
         async def call_tools(state: State):
+            assert self.session is not None
             total_result = []
             try:
                 for tool in state["tool_calls"]:
@@ -179,7 +181,15 @@ class MCPClient:
                     )
                     if state["debug"]:
                         pprint.pp(result)
-                    final_result = orjson.loads(result.content[0].text)
+                    content = result.content[0]
+                    if not isinstance(content, TextContent):
+                        raise Exception(
+                            f"It is not TextContent since it is {type(content)}"
+                        )
+                    if state["debug"]:
+                        pprint.pp(content)
+                        pprint.pp(type(content))
+                    final_result = orjson.loads(content.text)
                     total_result.append(final_result)
             except Exception as e:
                 total_result.append({"response": f"Error: {str(e)}"})
@@ -245,6 +255,8 @@ class MCPClient:
                 - When encountering troll, avoid the fight and find the sword first.
 
                 """
+                assert self.tools is not None
+
                 agent = create_react_agent(
                     model=model,
                     tools=self.tools,
@@ -258,6 +270,19 @@ class MCPClient:
                     config={"recursion_limit": 100},
                 )
             case "react_implement":
+                agent_response = await self.agent.ainvoke(
+                    {
+                        "structured_response": None,
+                        "history": [],
+                        "llm": model,
+                        "tool_calls": [],
+                        "current_step": 0,
+                        "maximum_step": 20,
+                        "debug": debug,
+                    },
+                    config={"recursion_limit": 300},
+                )
+            case _:
                 agent_response = await self.agent.ainvoke(
                     {
                         "structured_response": None,
@@ -312,7 +337,7 @@ async def main():
         "current_step",
         "maximum_step",
     ]
-    model = llama
+    model = gemini
     with open(
         f"{test_result}/result_{model.model.replace('/','-')}_{current}.csv",
         "w",
