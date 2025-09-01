@@ -47,9 +47,12 @@ curl -X POST "http://127.0.0.1:8000/zork/zork285" \
 
 1. cd mcp-server
 2. pip install uv
-3. uv venv. venv
-4. uv add -r requirements.txt
-5. uv sync
+3. uv init
+4. uv venv .venv
+5. uv add -r requirements.txt
+6. uv sync
+
+Don't forget to delete README and main.py in mcp-server folder
 
 ### How to run
 

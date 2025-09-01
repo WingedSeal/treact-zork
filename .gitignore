@@ -18,3 +18,7 @@ pyproject.toml
 .python-version
 
 logs/*
+
+zork-tool_logs/*
+
+test_result/*

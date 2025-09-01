@@ -21,10 +21,15 @@ import orjson
 from langchain_core.prompts import ChatPromptTemplate
 from langgraph.graph import StateGraph, START, END
 from typing_extensions import TypedDict
-
+import csv
+import datetime
+from tqdm import tqdm
 
 load_dotenv("./mcp-client/.env")
 
+test_result = "./test_result"
+if not os.path.exists(test_result):
+    os.makedirs(test_result)
 
 if not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./mcp-client/access_key.json"
@@ -71,6 +76,7 @@ class State(TypedDict):
     tool_calls: list[Any] = []
     current_step: int = 0
     maximum_step: int = 50
+    debug: bool = False
 
 
 class MCPClient:
@@ -130,6 +136,8 @@ class MCPClient:
             - Keep tracking the score and current steps
             - when the current step : {current_step} equals to the maximum number of steps: {maximum_step}, you must quit the game
             - When encountering troll, avoid the fight and find the sword first.
+            - Do not repeat the same action for more than 3 times.
+            - Do not stop until the current step equals the mximum number of steps
 
             """
             prompt = ChatPromptTemplate.from_template(template)
@@ -142,8 +150,9 @@ class MCPClient:
                 }
             )
             count = state["current_step"] + 1
-            print(f"Count: {count}")
-            pprint.pp(result.tool_calls)
+            if state["debug"]:
+                print(f"Count: {count}")
+                pprint.pp(result.tool_calls)
             return {
                 "tool_calls": result.tool_calls,
                 "current_step": count,
@@ -151,10 +160,12 @@ class MCPClient:
 
         def should_continue(state: State):
             if state["current_step"] > state["maximum_step"]:
-                pprint.pp(f"Reach Maximum")
+                if state["debug"]:
+                    pprint.pp(f"Reach Maximum")
                 return "END"
             if state["tool_calls"]:
-                pprint.pp("Action")
+                if state["debug"]:
+                    pprint.pp("Action")
                 return "Action"
             else:
                 return "END"
@@ -166,7 +177,8 @@ class MCPClient:
                     result = await self.session.call_tool(
                         tool["name"], arguments=tool["args"]
                     )
-                    pprint.pp(result)
+                    if state["debug"]:
+                        pprint.pp(result)
                     final_result = orjson.loads(result.content[0].text)
                     total_result.append(final_result)
             except Exception as e:
@@ -180,7 +192,10 @@ class MCPClient:
                 result = await llm_with_structured.ainvoke(
                     [HumanMessage(content=state["history"])]
                 )
-                return {"structured_response": result}
+                return {
+                    "structured_response": result,
+                    "current_step": state["current_step"] - 1,
+                }
             except Exception as e:
                 return {"structured_response": f"Error: {str(e)}"}
 
@@ -200,7 +215,9 @@ class MCPClient:
         agent = graph.compile()
         self.agent = agent
 
-    async def talk_with_zork(self, history: list[str], llm: Any, category: str):
+    async def talk_with_zork(
+        self, history: list[str], model: Any, category: str, debug: bool
+    ):
         match category:
             case "react_framework":
                 template = """
@@ -229,11 +246,11 @@ class MCPClient:
 
                 """
                 agent = create_react_agent(
-                    model=llm,
+                    model=model,
                     tools=self.tools,
                     prompt=template,
                     response_format=response,
-                    debug=True,
+                    debug=debug,
                 )
 
                 agent_response = await agent.ainvoke(
@@ -245,10 +262,11 @@ class MCPClient:
                     {
                         "structured_response": None,
                         "history": [],
-                        "llm": llm,
+                        "llm": model,
                         "tool_calls": [],
                         "current_step": 0,
-                        "maximum_step": 200,
+                        "maximum_step": 20,
+                        "debug": debug,
                     },
                     config={"recursion_limit": 300},
                 )
@@ -286,16 +304,51 @@ client = MCPClient()
 
 async def main():
     await client.connect_to_server()
+    current = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    fields = [
+        "game_completed",
+        "current_status",
+        "score",
+        "current_step",
+        "maximum_step",
+    ]
+    model = gemini
+    with open(
+        f"{test_result}/result_{model.model.replace('/','-')}_{current}.csv",
+        "w",
+        newline="",
+    ) as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=fields)
+        writer.writeheader()
     try:
-        result = await client.talk_with_zork(
-            history=[], llm=gemini, category="react_implement"
-        )
-        pprint.pp(result["structured_response"])
-        print(result["structured_response"].game_completed)
-        print(result["structured_response"].current_status)
-        print(result["structured_response"].score)
+        for i in tqdm(iterable=range(2)):
+            result = await client.talk_with_zork(
+                history=[], model=model, category="react_implement", debug=True
+            )
+            print(result["structured_response"].game_completed)
+            print(result["structured_response"].current_status)
+            print(result["structured_response"].score)
+            print(result["current_step"])
+            print(result["maximum_step"])
+            test = [
+                {
+                    "game_completed": result["structured_response"].game_completed,
+                    "current_status": result["structured_response"].current_status,
+                    "score": result["structured_response"].score,
+                    "current_step": result["current_step"],
+                    "maximum_step": result["maximum_step"],
+                }
+            ]
+            pprint.pp(f"Iteration {i+1} completed.")
+            with open(
+                f"{test_result}/result_{model.model.replace('/','-')}_{current}.csv",
+                "a",
+                newline="",
+            ) as csvfile:
+                writer = csv.DictWriter(csvfile, fieldnames=fields)
+                writer.writerows(test)
     except Exception as e:
-        print(str(e))
+        print(f"Error: {str(e)}")
 
     await client.cleanup()
     return
