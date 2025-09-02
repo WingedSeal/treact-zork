@@ -32,17 +32,18 @@ test_result = "./test_result"
 if not os.path.exists(test_result):
     os.makedirs(test_result)
 
-if os.path.exists("./mcp-client/access_key.json"):
-    if not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
-        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./mcp-client/access_key.json"
 
-    gemini = ChatGoogleGenerativeAI(
+api_key = os.getenv("API_KEY")
+if not api_key:
+    model = ChatOllama(model="llama3.1", temperature=0)
+
+else:
+    os.environ["GOOGLE_API_KEY"] = api_key
+    model = ChatGoogleGenerativeAI(
         model="gemini-2.5-flash",
         temperature=0,
         # max_output_tokens=8000,
     )
-
-llama = ChatOllama(model="qwq", temperature=0)
 
 
 class response(BaseModel):
@@ -73,6 +74,7 @@ class response(BaseModel):
 
 class State(TypedDict):
     structured_response: Any
+    template: str
     history: list[Any]
     llm: Any
     tool_calls: list[Any]
@@ -111,37 +113,7 @@ class MCPClient:
         async def llm_call(state: State):
             llm = state["llm"]
             llm_with_tools = llm.bind_tools(self.tools)
-            template = """
-        
-            You are playing Zork, a text adventure game. Your goal is to collect as many treasures as possible.
-
-            ### Current History of tool calls and output ###
-            {history}
-
-            ## YOUR REQUIRED STEPS ##
-            STEP 1: Start the game by calling zork-285-api-gen-key tool to get the generated key (first time only)
-            STEP 2: call zork-285-api-get-dict tool to get the game dictionary (first time only)
-            STEP 3: Use the generated key with the proper command as parameters for zork-285-api-use-key tool
-            STEP 4: Read the game response
-            STEP 5: Then call Zork tool again with the new command and the new generated key
-            STEP 6: Repeat steps 3-5 for {maximum_step} times, then proceed to quit the game with the current status
-
-            ## How to track current score ##
-            - Input command 'score' to get the current score
-            
-            ## How to quit the game ##
-            - Input command 'quit' to get the current score and confirmation whether to quit the game by calling tool
-            
-            ### Important ###
-            - The first command should be 'help' to understand the game mechanics and available commands.
-            - Keep tracking the game state and your inventory and also history commands
-            - Keep tracking the score and current steps
-            - when the current step : {current_step} equals to the maximum number of steps: {maximum_step}, you must quit the game
-            - When encountering troll, avoid the fight and find the sword first.
-            - Do not repeat the same action for more than 3 times.
-            - Do not stop until the current step equals the mximum number of steps
-
-            """
+            template = state["template"]
             prompt = ChatPromptTemplate.from_template(template)
             chain = prompt | llm_with_tools
             result = await chain.ainvoke(
@@ -249,7 +221,6 @@ class MCPClient:
                 - Input command 'quit' to get the current score and confirmation whether to quit the game
                 
                 ### Important ###
-                - The first command should be 'help' to understand the game mechanics and available commands.
                 - Keep tracking the game state and your inventory and also history commands
                 - Keep tracking the score and current steps
                 - After 20 steps of calling tool, proceed to quit the game with the current status
@@ -271,9 +242,39 @@ class MCPClient:
                     config={"recursion_limit": 100},
                 )
             case "react_implement":
+                template = """
+                    You are playing Zork, a text adventure game. Your goal is to collect as many treasures as possible.
+
+                    ### Current History of tool calls and output ###
+                    {history}
+
+                    ## YOUR REQUIRED STEPS ##
+                    STEP 1: Start the game by calling zork-285-api-gen-key tool to get the generated key (first time only)
+                    STEP 2: call zork-285-api-get-dict tool to get the game dictionary (first time only)
+                    STEP 3: Use the generated key with the proper command as parameters for zork-285-api-use-key tool
+                    STEP 4: Read the game response
+                    STEP 5: Then call Zork tool again with the new command and the new generated key
+                    STEP 6: Repeat steps 3-5 for {maximum_step} times, then proceed to quit the game with the current status
+
+                    ## How to track current score ##
+                    - Input command 'score' to get the current score
+                    
+                    ## How to quit the game ##
+                    - Input command 'quit' to get the current score and confirmation whether to quit the game by calling tool
+                    
+                    ### Important ###
+                    - Keep tracking the game state and your inventory and also history commands
+                    - Keep tracking the score and current steps
+                    - when the current step : {current_step} equals to the maximum number of steps: {maximum_step}, you must quit the game
+                    - When encountering troll, avoid the fight and find the sword first.
+                    - Do not repeat the same action for more than 3 times.
+                    - Do not stop until the current step equals the mximum number of steps
+
+                    """
                 agent_response = await self.agent.ainvoke(
                     {
                         "structured_response": None,
+                        "template": template,
                         "history": [],
                         "llm": model,
                         "tool_calls": [],
@@ -284,18 +285,7 @@ class MCPClient:
                     config={"recursion_limit": 300},
                 )
             case _:
-                agent_response = await self.agent.ainvoke(
-                    {
-                        "structured_response": None,
-                        "history": [],
-                        "llm": model,
-                        "tool_calls": [],
-                        "current_step": 0,
-                        "maximum_step": 20,
-                        "debug": debug,
-                    },
-                    config={"recursion_limit": 300},
-                )
+                raise Exception("Please assign the type of prompting")
 
         return agent_response
 
@@ -338,8 +328,6 @@ async def main():
         "current_step",
         "maximum_step",
     ]
-    model = llama
-    print(model.model)
     with open(
         f"{test_result}/result_{model.model.replace('/','-').replace(':', '-')}_{current}.csv",
         "w",
@@ -348,26 +336,40 @@ async def main():
         writer = csv.DictWriter(csvfile, fieldnames=fields)
         writer.writeheader()
     try:
+        history = []
+        category = "react_implement"
+        debug = True
         for i in tqdm(iterable=range(2)):
             result = await client.talk_with_zork(
-                history=[], model=model, category="react_framework", debug=True
+                history=history, model=model, category=category, debug=debug
             )
             print(result)
             print(result["structured_response"])
             print(result["structured_response"].game_completed)
             print(result["structured_response"].current_status)
             print(result["structured_response"].score)
-            print(result["current_step"])
-            print(result["maximum_step"])
-            test = [
-                {
-                    "game_completed": result["structured_response"].game_completed,
-                    "current_status": result["structured_response"].current_status,
-                    "score": result["structured_response"].score,
-                    "current_step": result["current_step"],
-                    "maximum_step": result["maximum_step"],
-                }
-            ]
+            if category == "react_framework":
+                test = [
+                    {
+                        "game_completed": result["structured_response"].game_completed,
+                        "current_status": result["structured_response"].current_status,
+                        "score": result["structured_response"].score,
+                        "current_step": "Unknown",
+                        "maximum_step": "Unknown",
+                    }
+                ]
+            else:
+                print(result["current_step"])
+                print(result["maximum_step"])
+                test = [
+                    {
+                        "game_completed": result["structured_response"].game_completed,
+                        "current_status": result["structured_response"].current_status,
+                        "score": result["structured_response"].score,
+                        "current_step": result["current_step"],
+                        "maximum_step": result["maximum_step"],
+                    }
+                ]
             pprint.pp(f"Iteration {i+1} completed.")
             with open(
                 f"{test_result}/result_{model.model.replace('/','-').replace(':', '-')}_{current}.csv",
