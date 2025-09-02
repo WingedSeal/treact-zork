@@ -21,7 +21,7 @@ def setup_logger():
         level=logging.INFO,
         handlers=[
             logging.FileHandler(
-                f"{log_dir}/chatbot_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.log",
+                f"{log_dir}/zork_{datetime.datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}.log",
                 mode="a",
                 encoding="utf-8",
             )

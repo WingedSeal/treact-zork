@@ -32,16 +32,17 @@ test_result = "./test_result"
 if not os.path.exists(test_result):
     os.makedirs(test_result)
 
-# if not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
-#     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./mcp-client/access_key.json"
+if os.path.exists("./mcp-client/access_key.json"):
+    if not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./mcp-client/access_key.json"
 
-# gemini = ChatGoogleGenerativeAI(
-#     model="gemini-2.5-flash",
-#     temperature=0,
-#     # max_output_tokens=8000,
-# )
+    gemini = ChatGoogleGenerativeAI(
+        model="gemini-2.5-flash",
+        temperature=0,
+        # max_output_tokens=8000,
+    )
 
-llama = ChatOllama(model="devstral:24b", temperature=0)
+llama = ChatOllama(model="qwq", temperature=0)
 
 
 class response(BaseModel):
@@ -329,7 +330,7 @@ client = MCPClient()
 
 async def main():
     await client.connect_to_server()
-    current = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    current = datetime.datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
     fields = [
         "game_completed",
         "current_status",
@@ -338,8 +339,9 @@ async def main():
         "maximum_step",
     ]
     model = llama
+    print(model.model)
     with open(
-        f"{test_result}/result_{model.model.replace('/','-')}_{current}.csv",
+        f"{test_result}/result_{model.model.replace('/','-').replace(':', '-')}_{current}.csv",
         "w",
         newline="",
     ) as csvfile:
@@ -348,8 +350,10 @@ async def main():
     try:
         for i in tqdm(iterable=range(2)):
             result = await client.talk_with_zork(
-                history=[], model=model, category="react_implement", debug=True
+                history=[], model=model, category="react_framework", debug=True
             )
+            print(result)
+            print(result["structured_response"])
             print(result["structured_response"].game_completed)
             print(result["structured_response"].current_status)
             print(result["structured_response"].score)
@@ -366,7 +370,7 @@ async def main():
             ]
             pprint.pp(f"Iteration {i+1} completed.")
             with open(
-                f"{test_result}/result_{model.model.replace('/','-')}_{current}.csv",
+                f"{test_result}/result_{model.model.replace('/','-').replace(':', '-')}_{current}.csv",
                 "a",
                 newline="",
             ) as csvfile:
