@@ -202,6 +202,25 @@ class MCPClient:
         self, history: list[str], model: Any, category: str, debug: bool
     ):
         match category:
+            case "test":
+                template = """ You are playing zork 285 via accessing MCP tool
+                Please complete the game
+                """
+
+                assert self.tools is not None
+
+                agent = create_react_agent(
+                    model=model,
+                    tools=self.tools,
+                    prompt=template,
+                    response_format=response,
+                    debug=debug,
+                )
+
+                agent_response = await agent.ainvoke(
+                    input={"messages": str(history)},
+                    config={"recursion_limit": 100},
+                )
             case "react_framework":
                 template = """
                 You are playing Zork, a text adventure game. Your goal is to collect as many treasures as possible.
@@ -216,9 +235,6 @@ class MCPClient:
                 
                 ## How to track current score ##
                 - Input command 'score' to get the current score
-                
-                ## How to quit the game ##
-                - Input command 'quit' to get the current score and confirmation whether to quit the game
                 
                 ### Important ###
                 - Keep tracking the game state and your inventory and also history commands
@@ -258,9 +274,6 @@ class MCPClient:
 
                     ## How to track current score ##
                     - Input command 'score' to get the current score
-                    
-                    ## How to quit the game ##
-                    - Input command 'quit' to get the current score and confirmation whether to quit the game by calling tool
                     
                     ### Important ###
                     - Keep tracking the game state and your inventory and also history commands
