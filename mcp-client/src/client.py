@@ -349,26 +349,40 @@ async def main():
         writer = csv.DictWriter(csvfile, fieldnames=fields)
         writer.writeheader()
     try:
+        history = []
+        category = "react_implement"
+        debug = True
         for i in tqdm(iterable=range(2)):
             result = await client.talk_with_zork(
-                history=[], model=model, category="react_implement", debug=True
+                history=history, model=model, category=category, debug=debug
             )
             print(result)
             print(result["structured_response"])
             print(result["structured_response"].game_completed)
             print(result["structured_response"].current_status)
             print(result["structured_response"].score)
-            print(result["current_step"])
-            print(result["maximum_step"])
-            test = [
-                {
-                    "game_completed": result["structured_response"].game_completed,
-                    "current_status": result["structured_response"].current_status,
-                    "score": result["structured_response"].score,
-                    "current_step": result["current_step"],
-                    "maximum_step": result["maximum_step"],
-                }
-            ]
+            if category == "react_framework":
+                test = [
+                    {
+                        "game_completed": result["structured_response"].game_completed,
+                        "current_status": result["structured_response"].current_status,
+                        "score": result["structured_response"].score,
+                        "current_step": "Unknown",
+                        "maximum_step": "Unknown",
+                    }
+                ]
+            else:
+                print(result["current_step"])
+                print(result["maximum_step"])
+                test = [
+                    {
+                        "game_completed": result["structured_response"].game_completed,
+                        "current_status": result["structured_response"].current_status,
+                        "score": result["structured_response"].score,
+                        "current_step": result["current_step"],
+                        "maximum_step": result["maximum_step"],
+                    }
+                ]
             pprint.pp(f"Iteration {i+1} completed.")
             with open(
                 f"{test_result}/result_{model.model.replace('/','-').replace(':', '-')}_{current}.csv",
