@@ -33,17 +33,17 @@ if not os.path.exists(test_result):
     os.makedirs(test_result)
 
 
-api_key = os.getenv("API_KEY")
-if not api_key:
-    model = ChatOllama(model="llama3.1", temperature=0)
+access = "./mcp-client/access_key.json"
 
-else:
-    os.environ["GOOGLE_API_KEY"] = api_key
+if os.path.exists(access):
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = access
     model = ChatGoogleGenerativeAI(
         model="gemini-2.5-flash",
         temperature=0,
         # max_output_tokens=8000,
     )
+else:
+    model = ChatOllama(model="llama3.1", temperature=0)
 
 
 class response(BaseModel):
@@ -81,6 +81,7 @@ class State(TypedDict):
     current_step: int
     maximum_step: int
     debug: bool
+    key: str
 
 
 class MCPClient:
@@ -111,25 +112,54 @@ class MCPClient:
         self.tools = tool_results
 
         async def llm_call(state: State):
-            llm = state["llm"]
-            llm_with_tools = llm.bind_tools(self.tools)
-            template = state["template"]
-            prompt = ChatPromptTemplate.from_template(template)
-            chain = prompt | llm_with_tools
-            result = await chain.ainvoke(
-                {
-                    "history": state["history"],
-                    "current_step": state["current_step"],
-                    "maximum_step": state["maximum_step"] - 3,
-                }
-            )
-            count = state["current_step"] + 1
+            if state["current_step"] == 0:
+                final_result = [
+                    {
+                        "name": "zork-285-api-gen-key",
+                        "args": {},
+                        "type": "tool_call",
+                    }
+                ]
+            elif state["current_step"] == 1:
+                final_result = [
+                    {
+                        "name": "zork-285-api-get-dict",
+                        "args": {},
+                        "type": "tool_call",
+                    }
+                ]
+            elif state["current_step"] == state["maximum_step"] - 1:
+                final_result = [
+                    {
+                        "name": "zork-285-api-use-key",
+                        "args": {"command": "score", "session_key": state["key"]},
+                        "type": "tool_call",
+                    }
+                ]
+            elif state["current_step"] >= state["maximum_step"]:
+                final_result = []
+            else:
+                llm = state["llm"]
+                llm_with_tools = llm.bind_tools(self.tools)
+                template = state["template"]
+                prompt = ChatPromptTemplate.from_template(template)
+                chain = prompt | llm_with_tools
+                result = await chain.ainvoke(
+                    {
+                        "history": state["history"],
+                        "current_step": state["current_step"],
+                        "maximum_step": state["maximum_step"],
+                    }
+                )
+                final_result = result.tool_calls
+
             if state["debug"]:
-                print(f"Count: {count}")
-                pprint.pp(result.tool_calls)
+                print(f"Count: {state['current_step'] + 1}")
+                pprint.pp(final_result)
+
             return {
-                "tool_calls": result.tool_calls,
-                "current_step": count,
+                "tool_calls": final_result,
+                "current_step": state["current_step"] + 1,
             }
 
         def should_continue(state: State):
@@ -137,7 +167,7 @@ class MCPClient:
                 if state["debug"]:
                     pprint.pp(f"Reach Maximum")
                 return "END"
-            if state["tool_calls"]:
+            elif state["tool_calls"]:
                 if state["debug"]:
                     pprint.pp("Action")
                 return "Action"
@@ -147,6 +177,7 @@ class MCPClient:
         async def call_tools(state: State):
             assert self.session is not None
             total_result = []
+            key = ""
             try:
                 for tool in state["tool_calls"]:
                     result = await self.session.call_tool(
@@ -162,19 +193,34 @@ class MCPClient:
                     if state["debug"]:
                         pprint.pp(content)
                         pprint.pp(type(content))
+
                     final_result = orjson.loads(content.text)
-                    total_result.append(final_result)
+                    total_result.append(
+                        {
+                            "tool_name": tool["name"],
+                            "arguments": tool["args"],
+                            "resposne": final_result,
+                        }
+                    )
+                    key = final_result["new_key"]
             except Exception as e:
                 total_result.append({"response": f"Error: {str(e)}"})
             total_result = state["history"] + total_result
-            return {"history": total_result}
+            return {"history": total_result, "key": key}
 
         async def summarize(state: State):
             llm_with_structured = state["llm"].with_structured_output(response)
             try:
-                result = await llm_with_structured.ainvoke(
-                    [HumanMessage(content=state["history"])]
-                )
+                template = """Summarize the following history of commands and responses from playing zork
+                
+                            ### History ###
+                            {history}
+                
+                            """
+
+                prompt = ChatPromptTemplate.from_template(template)
+                chain = prompt | llm_with_structured
+                result = await chain.ainvoke({"history": state["history"][-4:-1]})
                 return {
                     "structured_response": result,
                     "current_step": state["current_step"] - 1,
@@ -202,9 +248,14 @@ class MCPClient:
         self, history: list[str], model: Any, category: str, debug: bool
     ):
         match category:
-            case "test":
+            case "react_test":
                 template = """ You are playing zork 285 via accessing MCP tool
-                Please complete the game
+                You must follow the instruction
+                Step 1: calling zork-285-api-gen-key tool to get the first generated key
+                Step 2: Use the generated key with the proper command for playing zork as parameters for zork-285-api-use-key tool
+                Step 3: Recieve the response with the generated key and proceed the Step 2 again
+                
+                Continue Step 3 until you collect all 20 treasures
                 """
 
                 assert self.tools is not None
@@ -294,6 +345,38 @@ class MCPClient:
                         "current_step": 0,
                         "maximum_step": 20,
                         "debug": debug,
+                        "key": "",
+                    },
+                    config={"recursion_limit": 300},
+                )
+            case "test_implement":
+                template = """ You are playing Zork (text-based game) via accessing MCP tool
+                
+                        Goal: collect as many treasures as possible.
+                        
+                        ### Previous result ###
+                        {history}
+
+                        ### Instruction ###
+                            - Based on the previous result, use the previous generated key and assign proper command to play zork
+                            
+                        ## Important ##
+                            - Do not repeate the same command
+                            - Do not stop and keep playing
+                        
+                        """
+
+                agent_response = await self.agent.ainvoke(
+                    {
+                        "structured_response": None,
+                        "template": template,
+                        "history": [],
+                        "llm": model,
+                        "tool_calls": [],
+                        "current_step": 0,
+                        "maximum_step": 50,
+                        "debug": debug,
+                        "key": "",
                     },
                     config={"recursion_limit": 300},
                 )
@@ -350,39 +433,24 @@ async def main():
         writer.writeheader()
     try:
         history = []
-        category = "react_implement"
+        category = "test_implement"
+        react = ["react_framework", "react_test"]
         debug = True
         for i in tqdm(iterable=range(2)):
             result = await client.talk_with_zork(
                 history=history, model=model, category=category, debug=debug
             )
-            print(result)
-            print(result["structured_response"])
-            print(result["structured_response"].game_completed)
-            print(result["structured_response"].current_status)
-            print(result["structured_response"].score)
-            if category == "react_framework":
-                test = [
-                    {
-                        "game_completed": result["structured_response"].game_completed,
-                        "current_status": result["structured_response"].current_status,
-                        "score": result["structured_response"].score,
-                        "current_step": "Unknown",
-                        "maximum_step": "Unknown",
-                    }
-                ]
-            else:
-                print(result["current_step"])
-                print(result["maximum_step"])
-                test = [
-                    {
-                        "game_completed": result["structured_response"].game_completed,
-                        "current_status": result["structured_response"].current_status,
-                        "score": result["structured_response"].score,
-                        "current_step": result["current_step"],
-                        "maximum_step": result["maximum_step"],
-                    }
-                ]
+            final_result = result["structured_response"].model_dump()
+            for key, value in final_result.items():
+                print(f"{key} : {value}")
+
+            if category not in react:
+                print(f"current_step : {result['current_step']}")
+                print(f"maximum_step : {result['maximum_step']}")
+                final_result["current_step"] = result["current_step"]
+                final_result["maximum_step"] = result["maximum_step"]
+
+            test = [final_result]
             pprint.pp(f"Iteration {i+1} completed.")
             with open(
                 f"{test_result}/result_{model.model.replace('/','-').replace(':', '-')}_{current}.csv",
