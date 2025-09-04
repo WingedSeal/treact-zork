@@ -25,6 +25,7 @@ import csv
 import datetime
 from tqdm import tqdm
 from mcp.types import TextContent
+import time
 
 load_dotenv("./mcp-client/.env")
 
@@ -33,17 +34,17 @@ if not os.path.exists(test_result):
     os.makedirs(test_result)
 
 
-access = "./mcp-client/access_key.json"
+api_key = os.getenv("API_KEY")
 
-if os.path.exists(access):
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = access
+if not api_key:
+    model = ChatOllama(model="llama3.1", temperature=0)
+else:
+    os.environ["GOOGLE_API_KEY"] = "AIzaSyBTSLkUWKlEVNO1IIAb95HzRpVBQvGzUxM"
     model = ChatGoogleGenerativeAI(
         model="gemini-2.5-flash",
         temperature=0,
         # max_output_tokens=8000,
     )
-else:
-    model = ChatOllama(model="llama3.1", temperature=0)
 
 
 class response(BaseModel):
@@ -151,6 +152,7 @@ class MCPClient:
                         "maximum_step": state["maximum_step"],
                     }
                 )
+                time.sleep(5)
                 final_result = result.tool_calls
 
             if state["debug"]:
