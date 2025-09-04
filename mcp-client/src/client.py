@@ -39,7 +39,7 @@ api_key = os.getenv("API_KEY")
 if not api_key:
     model = ChatOllama(model="llama3.1", temperature=0)
 else:
-    os.environ["GOOGLE_API_KEY"] = "AIzaSyBTSLkUWKlEVNO1IIAb95HzRpVBQvGzUxM"
+    os.environ["GOOGLE_API_KEY"] = api_key
     model = ChatGoogleGenerativeAI(
         model="gemini-2.5-flash",
         temperature=0,
