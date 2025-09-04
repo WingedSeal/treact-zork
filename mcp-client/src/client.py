@@ -43,7 +43,7 @@ if os.path.exists(access):
         # max_output_tokens=8000,
     )
 else:
-    model = ChatOllama(model="llama3.1", temperature=0)
+    model = ChatOllama(model="qwen3:8b", temperature=0)
 
 
 class response(BaseModel):
@@ -374,7 +374,7 @@ class MCPClient:
                         "llm": model,
                         "tool_calls": [],
                         "current_step": 0,
-                        "maximum_step": 50,
+                        "maximum_step": 200,
                         "debug": debug,
                         "key": "",
                     },
