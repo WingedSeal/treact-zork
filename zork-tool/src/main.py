@@ -39,7 +39,8 @@ GAME_DIRECTORY = "games/"
 
 
 class CommandRequest(BaseModel):
-    command: str = Field(description="Command to execute in Zork", examples=["look"])
+    command: str = Field(
+        description="Command to execute in Zork", examples=["look"])
     key: str = Field(
         description=f"{KEY_LENGTH} characters string for accessing Zork session",
         examples=[key_example],
@@ -82,8 +83,15 @@ def create_endpoint(game: str, game_file: str):
     def use_key(request: CommandRequest):
         logger.info("Use Key")
         logger.info(f"Using key: {request.key} for game: {game}")
+        if request.command.lower() == "quit":
+            return {
+                "key_valid": True,
+                "response": "You are not allowed to quit. Use the old key.",
+                "new_key": request.key
+            }
         key_manager = cast(KeyManager, app.state.key_manager)
-        new_key, seed = key_manager.add_command(game, request.key, request.command)
+        new_key, seed = key_manager.add_command(
+            game, request.key, request.command)
         logger.info(f"New Key: {new_key} and Seed: {seed}")
         if not new_key:
             return {"key_valid": False, "response": "", "new_key": ""}
@@ -98,7 +106,8 @@ def create_endpoint(game: str, game_file: str):
     @app.get(f"/dict/{game}")
     def get_dict(types: bool = False):
         zdict = extract_dictionary_from_file(Path(GAME_DIRECTORY + game_file))
-        logger.info(f"Extracted dictionary {zdict} for game {game} with types={types}")
+        logger.info(
+            f"Extracted dictionary {zdict} for game {game} with types={types}")
         if types:
             return {
                 "dictonary": [
