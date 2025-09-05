@@ -129,7 +129,7 @@ class MCPClient:
                         "type": "tool_call",
                     }
                 ]
-            elif state["current_step"] == state["maximum_step"] - 1:
+            elif state["current_step"] >= state["maximum_step"] - 1:
                 final_result = [
                     {
                         "name": "zork-285-api-use-key",
@@ -137,8 +137,6 @@ class MCPClient:
                         "type": "tool_call",
                     }
                 ]
-            elif state["current_step"] >= state["maximum_step"]:
-                final_result = []
             else:
                 llm = state["llm"]
                 llm_with_tools = llm.bind_tools(self.tools)
@@ -158,6 +156,15 @@ class MCPClient:
             if state["debug"]:
                 print(f"Count: {state['current_step'] + 1}")
                 pprint.pp(final_result)
+
+            if not final_result:
+                final_result = [
+                    {
+                        "name": "zork-285-api-use-key",
+                        "args": {"command": "score", "session_key": state["key"]},
+                        "type": "tool_call",
+                    }
+                ]
 
             return {
                 "tool_calls": final_result,
