@@ -22,3 +22,5 @@ mcp-server_logs/*
 zork-tool_logs/*
 
 test_result/*
+
+games/*

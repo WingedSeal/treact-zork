@@ -116,7 +116,7 @@ class MCPClient:
             if state["current_step"] == 0:
                 final_result = [
                     {
-                        "name": "zork-285-api-gen-key",
+                        "name": "zork-1-api-gen-key",
                         "args": {},
                         "type": "tool_call",
                     }
@@ -124,7 +124,7 @@ class MCPClient:
             elif state["current_step"] == 1:
                 final_result = [
                     {
-                        "name": "zork-285-api-get-dict",
+                        "name": "zork-1-api-get-words",
                         "args": {},
                         "type": "tool_call",
                     }
@@ -132,7 +132,7 @@ class MCPClient:
             elif state["current_step"] >= state["maximum_step"] - 1:
                 final_result = [
                     {
-                        "name": "zork-285-api-use-key",
+                        "name": "zork-1-api-use-key",
                         "args": {"command": "score", "session_key": state["key"]},
                         "type": "tool_call",
                     }
@@ -150,7 +150,7 @@ class MCPClient:
                         "maximum_step": state["maximum_step"],
                     }
                 )
-                time.sleep(5)
+                time.sleep(7)
                 final_result = result.tool_calls
 
             if state["debug"]:
@@ -160,7 +160,7 @@ class MCPClient:
             if not final_result:
                 final_result = [
                     {
-                        "name": "zork-285-api-use-key",
+                        "name": "zork-1-api-use-key",
                         "args": {"command": "score", "session_key": state["key"]},
                         "type": "tool_call",
                     }
@@ -229,7 +229,7 @@ class MCPClient:
 
                 prompt = ChatPromptTemplate.from_template(template)
                 chain = prompt | llm_with_structured
-                result = await chain.ainvoke({"history": state["history"][-4:-1]})
+                result = await chain.ainvoke({"history": state["history"][-10:-1]})
                 return {
                     "structured_response": result,
                     "current_step": state["current_step"] - 1,
@@ -383,11 +383,12 @@ class MCPClient:
                         "llm": model,
                         "tool_calls": [],
                         "current_step": 0,
-                        "maximum_step": 50,
+                        "maximum_step": 400,
                         "debug": debug,
                         "key": "",
                     },
-                    config={"recursion_limit": 300},
+                    config={"recursion_limit": 800},
+                    # Recurstion limit should be > 2 * maximum step
                 )
             case _:
                 raise Exception("Please assign the type of prompting")
@@ -440,6 +441,7 @@ async def main():
     ) as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=fields)
         writer.writeheader()
+    print(f"Model: {model.model}")
     try:
         history = []
         category = "test_implement"
