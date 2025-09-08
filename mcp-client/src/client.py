@@ -74,13 +74,19 @@ class response(BaseModel):
 
 
 class State(TypedDict):
-    structured_response: Any
-    template: str
-    history: list[Any]
     llm: Any
+    template: str
+
+    history: list[Any]
     tool_calls: list[Any]
+    structured_response: Any
+
     current_step: int
     maximum_step: int
+
+    empty_call_threshold: int
+    max_empty_call_threshold: int
+
     debug: bool
     key: str
 
@@ -113,18 +119,20 @@ class MCPClient:
         self.tools = tool_results
 
         async def llm_call(state: State):
+            empty_call_threshold = state["empty_call_threshold"]
             if state["current_step"] == 0:
                 final_result = [
                     {
-                        "name": "zork-1-api-gen-key",
+                        "name": "zork-1-api-get-words",
                         "args": {},
                         "type": "tool_call",
                     }
                 ]
+
             elif state["current_step"] == 1:
                 final_result = [
                     {
-                        "name": "zork-1-api-get-words",
+                        "name": "zork-1-api-gen-key",
                         "args": {},
                         "type": "tool_call",
                     }
@@ -150,14 +158,14 @@ class MCPClient:
                         "maximum_step": state["maximum_step"],
                     }
                 )
-                time.sleep(7)
+                # time.sleep(7)
                 final_result = result.tool_calls
 
-            if state["debug"]:
-                print(f"Count: {state['current_step'] + 1}")
-                pprint.pp(final_result)
-
             if not final_result:
+                empty_call_threshold += 1
+                print(
+                    f"**Empty tool call {empty_call_threshold}**: use command 'score'"
+                )
                 final_result = [
                     {
                         "name": "zork-1-api-use-key",
@@ -166,13 +174,22 @@ class MCPClient:
                     }
                 ]
 
+            if state["debug"]:
+                print(f"Count: {state['current_step'] + 1}")
+                pprint.pp(final_result)
+
             return {
                 "tool_calls": final_result,
                 "current_step": state["current_step"] + 1,
+                "empty_call_threshold": empty_call_threshold,
             }
 
         def should_continue(state: State):
-            if state["current_step"] > state["maximum_step"]:
+            if state["empty_call_threshold"] > state["max_empty_call_threshold"]:
+                if state["debug"]:
+                    pprint.pp(f"Reach empty_call_threshold")
+                return "END"
+            elif state["current_step"] > state["maximum_step"]:
                 if state["debug"]:
                     pprint.pp(f"Reach Maximum")
                 return "END"
@@ -355,6 +372,8 @@ class MCPClient:
                         "maximum_step": 20,
                         "debug": debug,
                         "key": "",
+                        "max_empty_call_threshold": 3,
+                        "empty_call_threshold": 0,
                     },
                     config={"recursion_limit": 300},
                 )
@@ -386,6 +405,8 @@ class MCPClient:
                         "maximum_step": 400,
                         "debug": debug,
                         "key": "",
+                        "max_empty_call_threshold": 5,
+                        "empty_call_threshold": 0,
                     },
                     config={"recursion_limit": 800},
                     # Recurstion limit should be > 2 * maximum step

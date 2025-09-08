@@ -76,7 +76,7 @@ def create_endpoint(game: str, game_file: str):
         logger.info("Gen Key")
         key, seed = cast(KeyManager, app.state.key_manager).gen_key(game)
         logger.info(f"Generated key: {key} for game: {game} with seed {seed}")
-        return {"initial_response": zork_post([], game_file, seed), "key": key}
+        return {"initial_response": zork_post([], game_file, seed), "new_key": key}
 
     @app.post(f"/use_key/{game}")
     def use_key(request: CommandRequest):
