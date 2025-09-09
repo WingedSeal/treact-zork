@@ -402,13 +402,13 @@ class MCPClient:
                         "llm": model,
                         "tool_calls": [],
                         "current_step": 0,
-                        "maximum_step": 400,
+                        "maximum_step": 550,
                         "debug": debug,
                         "key": "",
                         "max_empty_call_threshold": 5,
                         "empty_call_threshold": 0,
                     },
-                    config={"recursion_limit": 800},
+                    config={"recursion_limit": 1200},
                     # Recurstion limit should be > 2 * maximum step
                 )
             case _:
@@ -468,7 +468,7 @@ async def main():
         category = "test_implement"
         react = ["react_framework", "react_test"]
         debug = True
-        for i in tqdm(iterable=range(2)):
+        for i in tqdm(iterable=range(1)):
             result = await client.talk_with_zork(
                 history=history, model=model, category=category, debug=debug
             )
