@@ -135,8 +135,11 @@ def create_endpoint(game: str, game_file: str):
         command_history = key_manager.get_history(game, key)
         response_history = list(zork_history(command_history,
                                              game_file, key_manager.get_seed(game, key)))
+        log = response_history.pop(0) + "\n" + "\n".join(
+            f" > {command}\n{response}" for command, response in zip(command_history, response_history, strict=True))
+        logger.info(f"Chat Log requested: {key}\n\n{log}")
         return {
-            "log": response_history.pop(0) + "\n" + "\n".join(f" > {command}\n{response}" for command, response in zip(command_history, response_history, strict=True))
+            "log": log
         }
 
 
