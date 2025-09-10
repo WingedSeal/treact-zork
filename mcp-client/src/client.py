@@ -25,6 +25,7 @@ import csv
 import datetime
 from tqdm import tqdm
 from mcp.types import TextContent
+import time
 
 load_dotenv("./mcp-client/.env")
 
@@ -33,18 +34,19 @@ if not os.path.exists(test_result):
     os.makedirs(test_result)
 
 
-access = "./mcp-client/access_key.json"
+api_key = os.getenv("API_KEY")
 
-if os.path.exists(access):
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = access
+if api_key:
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = api_key
     model = ChatGoogleGenerativeAI(
         model="gemini-2.5-flash",
         temperature=0,
         # max_output_tokens=8000,
     )
 else:
-    model = ChatOllama(model="qwen3:8b", temperature=0)
-
+    model = ChatOllama(model="gpt-oss:20b", temperature=0)
+    # model = ChatOllama(model="qwen3:8b", temperature=0) 
+    # model = ChatOllama(model="llama3.1:latest", temperature=0)
 
 class response(BaseModel):
     game_completed: Annotated[
@@ -350,10 +352,17 @@ class MCPClient:
                     config={"recursion_limit": 300},
                 )
             case "test_implement":
-                template = """ You are playing Zork (text-based game) via accessing MCP tool
+                template = """ You are playing Zork (text-based game) via accessing MCP tools.
+                        You must follow the instruction below to play the game.
                 
                         Goal: collect as many treasures as possible.
-                        
+
+                        **When you encounter a trophy**:
+                        - The trophy may be protected by an object, so you cannot get it directly.
+                        - Check your inventory to see what you have before taking any action to the trophy.
+                        - If 'take trophy' does not work then try to use item in your inventory to get the trophy.
+                        - If you tried every tool or item in your inventory and it does not work then go arround and find more items that may useful to get the trophy.
+
                         ### Previous result ###
                         {history}
 
@@ -363,6 +372,7 @@ class MCPClient:
                         ## Important ##
                             - Do not repeate the same command
                             - Do not stop and keep playing
+                            - Return score every 10 steps
                         
                         """
 
@@ -374,11 +384,11 @@ class MCPClient:
                         "llm": model,
                         "tool_calls": [],
                         "current_step": 0,
-                        "maximum_step": 200,
+                        "maximum_step": 400,
                         "debug": debug,
                         "key": "",
                     },
-                    config={"recursion_limit": 300},
+                    config={"recursion_limit": 500},
                 )
             case _:
                 raise Exception("Please assign the type of prompting")
