@@ -78,15 +78,43 @@ app = FastAPI()
 app.state.key_manager = KeyManager(list(GAMES.keys()))
 
 
+class GenKeyResponse(BaseModel):
+    initial_response: str
+    key: str
+
+
+class UseKeyResponse(BaseModel):
+    key_valid: bool
+    response: str
+    new_key: str
+
+
+class GetDictResponse(BaseModel):
+    dictionary: list[str]
+
+
+class _WordWithTypes(BaseModel):
+    word: str
+    word_type: str
+
+
+class GetDictWithTypesResponse(BaseModel):
+    dictionary: list[_WordWithTypes]
+
+
+class ChatLogResponse(BaseModel):
+    log: str
+
+
 def create_endpoint(game: str, game_file: str):
-    @app.get(f"/gen_key/{game}")
+    @app.get(f"/gen_key/{game}", response_model=GenKeyResponse)
     def gen_key():
         logger.info("Gen Key")
         key, seed = cast(KeyManager, app.state.key_manager).gen_key(game)
         logger.info(f"Generated key: {key} for game: {game} with seed {seed}")
         return {"initial_response": zork_post([], game_file, seed), "key": key}
 
-    @app.post(f"/use_key/{game}")
+    @app.post(f"/use_key/{game}", response_model=UseKeyResponse)
     def use_key(request: CommandRequest):
         logger.info("Use Key")
         logger.info(f"Using key: {request.key} for game: {game}")
@@ -110,22 +138,26 @@ def create_endpoint(game: str, game_file: str):
             "new_key": new_key,
         }
 
-    @app.get(f"/dict/{game}")
-    def get_dict(types: bool = False):
+    @app.get(f"/dict/{game}", response_model=GetDictResponse)
+    def get_dict():
         zdict = extract_dictionary_from_file(Path(GAME_DIRECTORY + game_file))
         logger.info(
-            f"Extracted dictionary {zdict} for game {game} with types={types}")
-        if types:
-            return {
-                "dictonary": [
-                    {"word": word, "word_types": word_types}
-                    for word, word_types in zdict
-                ]
-            }
-        else:
-            return {"words": [word for word, word_types in zdict]}
+            f"Extracted dictionary {zdict} for game {game}")
+        return {"dictionary": [word for word, word_types in zdict]}
 
-    @app.get(f"/chat_log/{game}")
+    @app.get(f"/dict_with_types/{game}", response_model=GetDictWithTypesResponse)
+    def get_dict_with_types():
+        zdict = extract_dictionary_from_file(Path(GAME_DIRECTORY + game_file))
+        logger.info(
+            f"Extracted dictionary {zdict} for game {game} with types")
+        return {
+            "dictionary": [
+                {"word": word, "word_types": word_types}
+                for word, word_types in zdict
+            ]
+        }
+
+    @app.get(f"/chat_log/{game}", response_model=ChatLogResponse)
     def get_chat_log(key: str):
         key_manager = cast(KeyManager, app.state.key_manager)
         if not key_manager.verify_key(game, key):
