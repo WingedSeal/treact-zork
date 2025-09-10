@@ -48,6 +48,12 @@ class KeyManager:
         self.keys[game][new_key].add_command(command, key)
         return new_key, seed
 
+    def verify_key(self, game: str, key: str) -> bool:
+        return key in self.keys[game]
+
+    def get_seed(self, game: str, key: str) -> str:
+        return self.keys[game][key].seed
+
     def get_history(self, game: str, key: str) -> list[str]:
         return self.keys[game][key].command_history
 
