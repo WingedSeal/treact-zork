@@ -41,7 +41,7 @@ if not api_key:
 else:
     os.environ["GOOGLE_API_KEY"] = api_key
     model = ChatGoogleGenerativeAI(
-        model="gemini-2.5-pro",
+        model="gemini-2.5-flash",
         temperature=0,
         # max_output_tokens=8000,
     )
@@ -225,14 +225,16 @@ class MCPClient:
                             "response": final_result,
                         }
                     )
-                    key = final_result["new_key"]
+                    key = final_result.get("new_key", state["key"])
             except Exception as e:
                 total_result.append({"response": f"Error: {str(e)}"})
             total_result = state["history"] + total_result
+            pprint.pp(total_result)
             if len(total_result) > state["history_max_length"]:
-                total_result = (
-                    total_result[0] + total_result[-state["history_max_length"] + 1 :]
-                )
+                print("Trimming history")
+                total_result = [total_result[0]] + total_result[
+                    -state["history_max_length"] :
+                ]
             return {"history": total_result, "key": key}
 
         async def summarize(state: State):
@@ -373,7 +375,7 @@ class MCPClient:
                         "llm": model,
                         "template": template,
                         "history": [],
-                        "history_max_length": 2,
+                        "history_max_length": 20,
                         "tool_calls": [],
                         "structured_response": None,
                         "current_step": 0,

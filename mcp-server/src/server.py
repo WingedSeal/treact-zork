@@ -115,7 +115,6 @@ def api_get_words(game: str) -> dict:
     try:
         result = httpx.get(
             url=f"http://localhost:8000/dict/{game}",
-            params={"types": False},
             timeout=300,
         )
         if result.status_code == 200:
@@ -156,7 +155,6 @@ def api_get_dict(game: str) -> dict:
     try:
         result = httpx.get(
             url=f"http://localhost:8000/dict_with_types/{game}",
-            params={"types": True},
             timeout=300,
         )
         if result.status_code == 200:

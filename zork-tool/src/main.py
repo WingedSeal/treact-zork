@@ -94,7 +94,7 @@ class GetDictResponse(BaseModel):
 
 class _WordWithTypes(BaseModel):
     word: str
-    word_type: str
+    word_types: list[str]
 
 
 class GetDictWithTypesResponse(BaseModel):
