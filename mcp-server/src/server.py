@@ -7,7 +7,7 @@ import logging
 import datetime
 
 
-log_dir = "./mcp-server_logs"
+log_dir = "./logs/mcp-server_logs"
 if not os.path.exists(log_dir):
     os.makedirs(log_dir)
 
@@ -38,182 +38,50 @@ mcp = FastMCP(
 )
 
 
-# @mcp.tool(name="zork-285-api-gen-key")
-# def zork_285_api_gen_key() -> dict:
-#     """
-#     Generate a new Zork Session a new key to access the session
-
-#     Arguments:
-#         None
-
-#     Returns:
-#         dict: Session Key and Zork's initial response.
-#     """
-
-#     try:
-#         result = httpx.get(url="http://localhost:8000/gen_key/zork285", timeout=300)
-#         if result.status_code == 200:
-#             pprint.pp(result.json())
-#             logger.info(result.json())
-#             return result.json()
-#         else:
-#             raise Exception("cannot call Zork")
-#     except httpx.HTTPError as e:
-#         pprint.pp(e)
-#         return {"key": "Error", "response": str(e)}
-
-
-# @mcp.tool(name="zork-285-api-use-key")
-# def zork_285_api_use_key(command: str, session_key: str) -> dict:
-#     """
-#     Using the session key obtained from "zork-285-api-gen-key", send new command to Zork.
-#     However, the key can only be used once. But using it generate a new key that can be used.
-
-#     Arguments:
-#         command (str): The command to send to Zork.
-#         session_key (str): The session key obtained from "zork-285-api-gen-key" or "zork-285-api-use-key".
-
-#     Returns:
-#         dict: The response from the Zork server and a new session key.
-#     """
-
-#     try:
-#         logger.info({"Input command": command, "session_key": session_key})
-#         pprint.pp({"Input command": command, "session_key": session_key})
-#         result = httpx.post(
-#             url="http://localhost:8000/use_key/zork285",
-#             json={"command": command, "key": session_key},
-#             timeout=300,
-#         )
-#         if result.status_code == 200:
-#             pprint.pp(result.json())
-#             logger.info(result.json())
-#             return result.json()
-#         else:
-#             raise Exception("cannot call Zork")
-#     except httpx.HTTPError as e:
-#         pprint.pp(e)
-#         return {"response": f"Error: {str(e)}"}
-
-
-# @mcp.tool(name="zork-285-api-get-words")
-# def zork_285_api_get_words() -> dict:
-#     """
-#     Get the list of all possible words from Zork game.
-#     (Must be used only one time)
-
-#     Arguments:
-#         None
-
-#     Returns:
-#         dict: The list of all possible commands from Zork game.
-
-#     Examples:
-#         {"words": ["take", "inventory", "north", "lamp", ...]}
-#     """
-
-#     try:
-#         result = httpx.get(
-#             url=f"http://localhost:8000/dict/zork285",
-#             params={"types": False},
-#             timeout=300,
-#         )
-#         if result.status_code == 200:
-#             pprint.pp(result.json())
-#             logger.info(result.json())
-#             return result.json()
-#         else:
-#             raise Exception("cannot call Zork")
-#     except httpx.HTTPError as e:
-#         pprint.pp(e)
-#         return {"response": f"Error: {str(e)}"}
-
-
-# @mcp.tool(name="zork-285-api-get-dict")
-# def zork_285_api_get_dict() -> dict:
-#     """
-#     Get the dictionary of words from the Zork game.
-
-#     Arguments:
-#         None
-
-#     Returns:
-#         dict: The game dictionary includes all recognizable words from the game's parser,
-#             including commands, objects, directions, adjectives, and other vocabulary
-#             that the game engine can understand and process.
-
-#     Examples:
-#      { "dictonary": [
-#                 {"word": "take", "word_types": ["verb"]},
-#                 {"word": "lamp", "word_types": ["noun"]},
-#                 {"word": "north", "word_types": ["direction"]},
-#                 ...
-#                     ]
-#     }
-
-#     """
-
-#     try:
-#         result = httpx.get(
-#             url=f"http://localhost:8000/dict/zork285",
-#             params={"types": True},
-#             timeout=300,
-#         )
-#         if result.status_code == 200:
-#             pprint.pp(result.json())
-#             logger.info(result.json())
-#             return result.json()
-#         else:
-#             raise Exception("cannot call Zork")
-#     except httpx.HTTPError as e:
-#         pprint.pp(e)
-#         return {"response": f"Error: {str(e)}"}
-
-
-@mcp.tool(name="zork-1-api-gen-key")
-def zork_1_api_gen_key() -> dict:
+@mcp.tool(name="api-gen-key")
+def api_gen_key(game: str) -> dict:
     """
-    Generate a new Zork Session a new key to access the session
+    Generate a new Session with a new key to access for the given game.
 
     Arguments:
-        None
+        game: str: The game to start a new session
 
     Returns:
-        dict: Session Key and Zork's initial response.
+        dict: Session Key and game's initial response.
     """
 
     try:
-        result = httpx.get(url="http://localhost:8000/gen_key/zork1", timeout=300)
+        result = httpx.get(url=f"http://localhost:8000/gen_key/{game}", timeout=300)
         if result.status_code == 200:
             pprint.pp(result.json())
             logger.info(result.json())
             return result.json()
         else:
-            raise Exception("cannot call Zork")
+            raise Exception(f"Cannot call api for {game}")
     except httpx.HTTPError as e:
         pprint.pp(e)
         return {"key": "Error", "response": str(e)}
 
 
-@mcp.tool(name="zork-1-api-use-key")
-def zork_1_api_use_key(command: str, session_key: str) -> dict:
+@mcp.tool(name="api-use-key")
+def api_use_key(game: str, command: str, session_key: str) -> dict:
     """
-    Using the session key obtained from "zork-1-api-gen-key", send new command to Zork1.
-    However, the key can only be used once. But using it generate a new key that can be used.
+    Using the session key obtained from "api-gen-key", send new command to the game.
+    However, the key can only be used once. But using it generates a new key that can be used.
 
     Arguments:
-        command (str): The command to send to Zork.
-        session_key (str): The session key obtained from "zork-1-api-gen-key" or "zork-1-api-use-key".
+        command (str): The command to send to the game.
+        session_key (str): The session key obtained from "api-gen-key" or "api-use-key".
 
     Returns:
-        dict: The response from the Zork server and a new session key.
+        dict: The response from the game server and a new session key.
     """
 
     try:
         logger.info({"Input command": command, "session_key": session_key})
         pprint.pp({"Input command": command, "session_key": session_key})
         result = httpx.post(
-            url="http://localhost:8000/use_key/zork1",
+            url=f"http://localhost:8000/use_key/{game}",
             json={"command": command, "key": session_key},
             timeout=300,
         )
@@ -222,32 +90,71 @@ def zork_1_api_use_key(command: str, session_key: str) -> dict:
             logger.info(result.json())
             return result.json()
         else:
-            raise Exception("cannot call Zork")
+            raise Exception(f"Cannot call api for {game}")
     except httpx.HTTPError as e:
         pprint.pp(e)
         return {"response": f"Error: {str(e)}"}
 
 
-@mcp.tool(name="zork-1-api-get-words")
-def zork_1_api_get_words() -> dict:
+@mcp.tool(name="api-get-words")
+def api_get_words(game: str) -> dict:
     """
-    Get the list of all possible words from Zork game.
+    Get the list of all possible words from the given game.
     (Must be used only one time)
+
+#     Arguments:
+#         None
+
+    Returns:
+        dict: The list of all possible commands from the given game.
+
+#     Examples:
+#         {"words": ["take", "inventory", "north", "lamp", ...]}
+#     """
+
+    try:
+        result = httpx.get(
+            url=f"http://localhost:8000/dict/{game}",
+            timeout=300,
+        )
+        if result.status_code == 200:
+            pprint.pp(result.json())
+            logger.info(result.json())
+
+            return result.json()
+        else:
+            raise Exception(f"Cannot call api for {game}")
+    except httpx.HTTPError as e:
+        pprint.pp(e)
+        return {"response": f"Error: {str(e)}"}
+
+
+@mcp.tool(name="api-get-dict")
+def api_get_dict(game: str) -> dict:
+    """
+    Get the dictionary of words from the given game.
 
     Arguments:
         None
 
     Returns:
-        dict: The list of all possible commands from Zork game.
+        dict: The game dictionary includes all recognizable words from the game's parser,
+            including commands, objects, directions, adjectives, and other vocabulary
+            that the game engine can understand and process.
 
     Examples:
-        {"words": ["take", "inventory", "north", "lamp", ...]}
+     { "dictonary": [
+                {"word": "take", "word_types": ["verb"]},
+                {"word": "lamp", "word_types": ["noun"]},
+                {"word": "north", "word_types": ["direction"]},
+                ...
+                    ]
+    }
     """
 
     try:
         result = httpx.get(
-            url=f"http://localhost:8000/dict/zork1",
-            params={"types": False},
+            url=f"http://localhost:8000/dict_with_types/{game}",
             timeout=300,
         )
         if result.status_code == 200:
@@ -255,51 +162,46 @@ def zork_1_api_get_words() -> dict:
             logger.info(result.json())
             return result.json()
         else:
-            raise Exception("cannot call Zork")
+            raise Exception(f"Cannot call api for {game}")
     except httpx.HTTPError as e:
         pprint.pp(e)
         return {"response": f"Error: {str(e)}"}
 
 
-# @mcp.tool(name="zork-1-api-get-dict")
-# def zork_1_api_get_dict() -> dict:
-#     """
-#     Get the dictionary of words from the Zork game.
+@mcp.tool(name="api-get-chat-log")
+def api_get_chat_log(game: str, session_key: str) -> dict:
+    """
+    Get the chat log of the current game session using the session key.
 
-#     Arguments:
-#         None
+    Arguments:
+        session_key (str): The session key obtained from "api-gen-key" or "api-use-key".
 
-#     Returns:
-#         dict: The game dictionary includes all recognizable words from the game's parser,
-#             including commands, objects, directions, adjectives, and other vocabulary
-#             that the game engine can understand and process.
+    Returns:
+        dict: The chat log of the current game session.
+    """
 
-#     Examples:
-#      { "dictonary": [
-#                 {"word": "take", "word_types": ["verb"]},
-#                 {"word": "lamp", "word_types": ["noun"]},
-#                 {"word": "north", "word_types": ["direction"]},
-#                 ...
-#                     ]
-#     }
+    try:
+        result = httpx.get(
+            url=f"http://localhost:8000/chat_log/{game}",
+            params={"key": session_key},
+            timeout=300,
+        )
+        if result.status_code == 200:
+            pprint.pp(result.json())
+            logger.info(result.json())
+            with open(
+                f"{log_dir}/chat_log_{datetime.datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}.txt",
+                "w",
+                encoding="utf-8",
+            ) as f:
+                f.write(f"{result.json().get('log', '')}")
 
-#     """
-
-#     try:
-#         result = httpx.get(
-#             url=f"http://localhost:8000/dict/zork1",
-#             params={"types": True},
-#             timeout=300,
-#         )
-#         if result.status_code == 200:
-#             pprint.pp(result.json())
-#             logger.info(result.json())
-#             return result.json()
-#         else:
-#             raise Exception("cannot call Zork")
-#     except httpx.HTTPError as e:
-#         pprint.pp(e)
-#         return {"response": f"Error: {str(e)}"}
+            return result.json()
+        else:
+            raise Exception(f"Cannot call api for {game}")
+    except httpx.HTTPError as e:
+        pprint.pp(e)
+        return {"response": f"Error: {str(e)}"}
 
 
 if __name__ == "__main__":
