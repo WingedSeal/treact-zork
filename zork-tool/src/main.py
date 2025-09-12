@@ -39,8 +39,7 @@ GAME_DIRECTORY = "games/"
 
 
 class CommandRequest(BaseModel):
-    command: str = Field(
-        description="Command to execute in Zork", examples=["look"])
+    command: str = Field(description="Command to execute in Zork", examples=["look"])
     key: str = Field(
         description=f"{KEY_LENGTH} characters string for accessing Zork session",
         examples=[key_example],
@@ -80,7 +79,7 @@ app.state.key_manager = KeyManager(list(GAMES.keys()))
 
 class GenKeyResponse(BaseModel):
     initial_response: str
-    key: str
+    new_key: str
 
 
 class UseKeyResponse(BaseModel):
@@ -125,8 +124,7 @@ def create_endpoint(game: str, game_file: str):
                 "new_key": request.key,
             }
         key_manager = cast(KeyManager, app.state.key_manager)
-        new_key, seed = key_manager.add_command(
-            game, request.key, request.command)
+        new_key, seed = key_manager.add_command(game, request.key, request.command)
         logger.info(f"New Key: {new_key} and Seed: {seed}")
         if not new_key:
             return {"key_valid": False, "response": "", "new_key": ""}
@@ -141,19 +139,16 @@ def create_endpoint(game: str, game_file: str):
     @app.get(f"/dict/{game}", response_model=GetDictResponse)
     def get_dict():
         zdict = extract_dictionary_from_file(Path(GAME_DIRECTORY + game_file))
-        logger.info(
-            f"Extracted dictionary {zdict} for game {game}")
+        logger.info(f"Extracted dictionary {zdict} for game {game}")
         return {"dictionary": [word for word, word_types in zdict]}
 
     @app.get(f"/dict_with_types/{game}", response_model=GetDictWithTypesResponse)
     def get_dict_with_types():
         zdict = extract_dictionary_from_file(Path(GAME_DIRECTORY + game_file))
-        logger.info(
-            f"Extracted dictionary {zdict} for game {game} with types")
+        logger.info(f"Extracted dictionary {zdict} for game {game} with types")
         return {
             "dictionary": [
-                {"word": word, "word_types": word_types}
-                for word, word_types in zdict
+                {"word": word, "word_types": word_types} for word, word_types in zdict
             ]
         }
 
@@ -161,18 +156,23 @@ def create_endpoint(game: str, game_file: str):
     def get_chat_log(key: str):
         key_manager = cast(KeyManager, app.state.key_manager)
         if not key_manager.verify_key(game, key):
-            return {
-                "log": "INVALID_KEY"
-            }
+            return {"log": "INVALID_KEY"}
         command_history = key_manager.get_history(game, key)
-        response_history = list(zork_history(command_history,
-                                             game_file, key_manager.get_seed(game, key)))
-        log = response_history.pop(0) + "\n" + "\n".join(
-            f" > {command}\n{response}" for command, response in zip(command_history, response_history, strict=True))
+        response_history = list(
+            zork_history(command_history, game_file, key_manager.get_seed(game, key))
+        )
+        log = (
+            response_history.pop(0)
+            + "\n"
+            + "\n".join(
+                f" > {command}\n{response}"
+                for command, response in zip(
+                    command_history, response_history, strict=True
+                )
+            )
+        )
         logger.info(f"Chat Log requested: {key}\n\n{log}")
-        return {
-            "log": log
-        }
+        return {"log": log}
 
 
 for game, game_file in GAMES.items():

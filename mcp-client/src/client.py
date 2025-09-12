@@ -41,7 +41,7 @@ if not api_key:
 else:
     os.environ["GOOGLE_API_KEY"] = api_key
     model = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
+        model="gemini-2.5-pro",
         temperature=0,
         # max_output_tokens=8000,
     )
@@ -78,17 +78,18 @@ class State(TypedDict):
     template: str
 
     history: list[Any]
+    history_max_length: int
+
     tool_calls: list[Any]
     structured_response: Any
 
     current_step: int
     maximum_step: int
 
-    empty_call_threshold: int
-    max_empty_call_threshold: int
-
     debug: bool
     key: str
+
+    game: str
 
 
 class MCPClient:
@@ -119,12 +120,11 @@ class MCPClient:
         self.tools = tool_results
 
         async def llm_call(state: State):
-            empty_call_threshold = state["empty_call_threshold"]
             if state["current_step"] == 0:
                 final_result = [
                     {
-                        "name": "zork-1-api-get-words",
-                        "args": {},
+                        "name": "api-get-dict",
+                        "args": {"game": state["game"]},
                         "type": "tool_call",
                     }
                 ]
@@ -132,16 +132,31 @@ class MCPClient:
             elif state["current_step"] == 1:
                 final_result = [
                     {
-                        "name": "zork-1-api-gen-key",
-                        "args": {},
+                        "name": "api-gen-key",
+                        "args": {"game": state["game"]},
+                        "type": "tool_call",
+                    }
+                ]
+            elif state["current_step"] == state["maximum_step"] - 2:
+                final_result = [
+                    {
+                        "name": "api-use-key",
+                        "args": {
+                            "game": state["game"],
+                            "command": "score",
+                            "session_key": state["key"],
+                        },
                         "type": "tool_call",
                     }
                 ]
             elif state["current_step"] >= state["maximum_step"] - 1:
                 final_result = [
                     {
-                        "name": "zork-1-api-use-key",
-                        "args": {"command": "score", "session_key": state["key"]},
+                        "name": "api-get-chat-log",
+                        "args": {
+                            "game": state["game"],
+                            "session_key": state["key"],
+                        },
                         "type": "tool_call",
                     }
                 ]
@@ -158,21 +173,8 @@ class MCPClient:
                         "maximum_step": state["maximum_step"],
                     }
                 )
-                time.sleep(8)
+                time.sleep(7)
                 final_result = result.tool_calls
-
-            if not final_result:
-                empty_call_threshold += 1
-                print(
-                    f"**Empty tool call {empty_call_threshold}**: use command 'score'"
-                )
-                final_result = [
-                    {
-                        "name": "zork-1-api-use-key",
-                        "args": {"command": "score", "session_key": state["key"]},
-                        "type": "tool_call",
-                    }
-                ]
 
             if state["debug"]:
                 print(f"Count: {state['current_step'] + 1}")
@@ -181,15 +183,10 @@ class MCPClient:
             return {
                 "tool_calls": final_result,
                 "current_step": state["current_step"] + 1,
-                "empty_call_threshold": empty_call_threshold,
             }
 
         def should_continue(state: State):
-            if state["empty_call_threshold"] > state["max_empty_call_threshold"]:
-                if state["debug"]:
-                    pprint.pp(f"Reach empty_call_threshold")
-                return "END"
-            elif state["current_step"] > state["maximum_step"]:
+            if state["current_step"] > state["maximum_step"]:
                 if state["debug"]:
                     pprint.pp(f"Reach Maximum")
                 return "END"
@@ -225,13 +222,17 @@ class MCPClient:
                         {
                             "tool_name": tool["name"],
                             "arguments": tool["args"],
-                            "resposne": final_result,
+                            "response": final_result,
                         }
                     )
                     key = final_result["new_key"]
             except Exception as e:
                 total_result.append({"response": f"Error: {str(e)}"})
             total_result = state["history"] + total_result
+            if len(total_result) > state["history_max_length"]:
+                total_result = (
+                    total_result[0] + total_result[-state["history_max_length"] + 1 :]
+                )
             return {"history": total_result, "key": key}
 
         async def summarize(state: State):
@@ -246,7 +247,7 @@ class MCPClient:
 
                 prompt = ChatPromptTemplate.from_template(template)
                 chain = prompt | llm_with_structured
-                result = await chain.ainvoke({"history": state["history"][-10:-1]})
+                result = await chain.ainvoke({"history": state["history"]})
                 return {
                     "structured_response": result,
                     "current_step": state["current_step"] - 1,
@@ -274,51 +275,26 @@ class MCPClient:
         self, history: list[str], model: Any, category: str, debug: bool
     ):
         match category:
-            case "react_test":
-                template = """ You are playing zork 285 via accessing MCP tool
-                You must follow the instruction
-                Step 1: calling zork-285-api-gen-key tool to get the first generated key
-                Step 2: Use the generated key with the proper command for playing zork as parameters for zork-285-api-use-key tool
-                Step 3: Recieve the response with the generated key and proceed the Step 2 again
-                
-                Continue Step 3 until you collect all 20 treasures
-                """
-
-                assert self.tools is not None
-
-                agent = create_react_agent(
-                    model=model,
-                    tools=self.tools,
-                    prompt=template,
-                    response_format=response,
-                    debug=debug,
-                )
-
-                agent_response = await agent.ainvoke(
-                    input={"messages": str(history)},
-                    config={"recursion_limit": 100},
-                )
             case "react_framework":
                 template = """
                 You are playing Zork, a text adventure game. Your goal is to collect as many treasures as possible.
+                
+                ## game = zork1 ##
 
                 ## YOUR REQUIRED STEPS ##
-                STEP 1: Start the game by calling zork-285-api-gen-key tool to get the generated key (first time only)
-                STEP 2: call zork-285-api-get-dict tool to get the game dictionary (first time only)
-                STEP 3: Use the generated key with the proper command as parameters for zork-285-api-use-key tool
+                STEP 1: call api-get-dict tool to get the game dictionary (first time only)
+                STEP 2: Start the game by calling api-gen-key tool to get the generated key (first time only)
+                STEP 3: Use the generated key with the proper command as parameters for api-use-key tool
                 STEP 4: Read the game response
                 STEP 5: Then call Zork tool again with the new command and the new generated key
-                STEP 6: Repeat steps 3-5 for 20 times, then proceed to quit the game with the current status
+                STEP 6: Repeat steps 3-5 until you have collected all 20 treasures and won the game
                 
                 ## How to track current score ##
                 - Input command 'score' to get the current score
                 
                 ### Important ###
                 - Keep tracking the game state and your inventory and also history commands
-                - Keep tracking the score and current steps
-                - After 20 steps of calling tool, proceed to quit the game with the current status
                 - When encountering troll, avoid the fight and find the sword first.
-
                 """
                 assert self.tools is not None
 
@@ -332,7 +308,7 @@ class MCPClient:
 
                 agent_response = await agent.ainvoke(
                     input={"messages": str(history)},
-                    config={"recursion_limit": 100},
+                    config={"recursion_limit": 300},
                 )
             case "react_implement":
                 template = """
@@ -342,9 +318,9 @@ class MCPClient:
                     {history}
 
                     ## YOUR REQUIRED STEPS ##
-                    STEP 1: Start the game by calling zork-285-api-gen-key tool to get the generated key (first time only)
-                    STEP 2: call zork-285-api-get-dict tool to get the game dictionary (first time only)
-                    STEP 3: Use the generated key with the proper command as parameters for zork-285-api-use-key tool
+                    STEP 1: call api-get-dict tool to get the game dictionary (first time only)
+                    STEP 2: Start the game by calling api-gen-key tool to get the generated key (first time only)
+                    STEP 3: Use the generated key with the proper command as parameters for api-use-key tool
                     STEP 4: Read the game response
                     STEP 5: Then call Zork tool again with the new command and the new generated key
                     STEP 6: Repeat steps 3-5 for {maximum_step} times, then proceed to quit the game with the current status
@@ -354,26 +330,24 @@ class MCPClient:
                     
                     ### Important ###
                     - Keep tracking the game state and your inventory and also history commands
-                    - Keep tracking the score and current steps
-                    - when the current step : {current_step} equals to the maximum number of steps: {maximum_step}, you must quit the game
+                    - when the current step : {current_step} = {maximum_step}, you must quit the game
                     - When encountering troll, avoid the fight and find the sword first.
                     - Do not repeat the same action for more than 3 times.
-                    - Do not stop until the current step equals the mximum number of steps
-
+                    - Do not stop until the current step equals to {maximum_step}.
                     """
                 agent_response = await self.agent.ainvoke(
                     {
-                        "structured_response": None,
+                        "llm": model,
                         "template": template,
                         "history": [],
-                        "llm": model,
+                        "history_max_length": 20,
                         "tool_calls": [],
+                        "structured_response": None,
                         "current_step": 0,
                         "maximum_step": 20,
                         "debug": debug,
                         "key": "",
-                        "max_empty_call_threshold": 3,
-                        "empty_call_threshold": 0,
+                        "game": "zork1",
                     },
                     config={"recursion_limit": 300},
                 )
@@ -396,17 +370,17 @@ class MCPClient:
 
                 agent_response = await self.agent.ainvoke(
                     {
-                        "structured_response": None,
+                        "llm": model,
                         "template": template,
                         "history": [],
-                        "llm": model,
+                        "history_max_length": 2,
                         "tool_calls": [],
+                        "structured_response": None,
                         "current_step": 0,
-                        "maximum_step": 550,
+                        "maximum_step": 30,
                         "debug": debug,
                         "key": "",
-                        "max_empty_call_threshold": 5,
-                        "empty_call_threshold": 0,
+                        "game": "zork1",
                     },
                     config={"recursion_limit": 1200},
                     # Recurstion limit should be > 2 * maximum step
@@ -466,7 +440,7 @@ async def main():
     try:
         history = []
         category = "test_implement"
-        react = ["react_framework", "react_test"]
+        react = ["react_framework"]
         debug = True
         for i in tqdm(iterable=range(1)):
             result = await client.talk_with_zork(
