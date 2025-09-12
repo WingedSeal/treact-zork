@@ -65,7 +65,7 @@ def zork_post(commands: list[str], zork_file: str, seed: str) -> str:
     return response
 
 
-GAMES = {"zork285": "zork_285.z5"}
+GAMES = {"zork285": "zork_285.z5", "zork1": "zork_1.z3"}
 app = FastAPI()
 app.state.key_manager = KeyManager(list(GAMES.keys()))
 
@@ -82,6 +82,12 @@ def create_endpoint(game: str, game_file: str):
     def use_key(request: CommandRequest):
         logger.info("Use Key")
         logger.info(f"Using key: {request.key} for game: {game}")
+        if request.command.lower() == "quit":
+            return {
+                "key_valid": True,
+                "response": "You are not allowed to quit. Use the old key.",
+                "new_key": request.key,
+            }
         key_manager = cast(KeyManager, app.state.key_manager)
         new_key, seed = key_manager.add_command(game, request.key, request.command)
         logger.info(f"New Key: {new_key} and Seed: {seed}")
