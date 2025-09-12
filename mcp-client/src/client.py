@@ -2,7 +2,6 @@ from gc import collect
 from mcp import ClientSession
 from langgraph.prebuilt import create_react_agent
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.schema import HumanMessage
 from langchain_mcp_adapters.tools import load_mcp_tools
 import asyncio
 import pprint
@@ -15,7 +14,7 @@ from fastapi import FastAPI
 import uvicorn
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import SystemMessage, AIMessageChunk, AIMessage
 from langchain_ollama import ChatOllama
 from typing import Any
 import orjson
@@ -29,6 +28,8 @@ from mcp.types import TextContent
 import time
 import json
 import re
+import trace
+
 
 load_dotenv("./mcp-client/.env")
 
@@ -48,8 +49,8 @@ if api_key:
         # max_output_tokens=8000,
     )
 else:
-    model = ChatOllama(model="gpt-oss:20b", temperature=0)
-    # model = ChatOllama(model="qwen3:8b", temperature=0) 
+    # model = ChatOllama(model="gpt-oss:20b", temperature=0)
+    model = ChatOllama(model="qwen3:8b", temperature=0) 
     # model = ChatOllama(model="llama3.1:latest", temperature=0)
 
 class response(BaseModel):
@@ -96,6 +97,12 @@ class State(TypedDict):
 
     game: str
 
+    missing_tool_calls: bool
+    hallucinate_count: int
+    hallucinate_count_streak: int
+    last_result_content: str
+
+
 
 class MCPClient:
     def __init__(self):
@@ -125,6 +132,7 @@ class MCPClient:
         self.tools = tool_results
 
         async def llm_call(state: State):
+            last_result_content = ""
             if state["current_step"] == 0:
                 final_result = [
                     {
@@ -154,28 +162,96 @@ class MCPClient:
                     }
                 ]
             else:
-                llm = state["llm"]
+                if isinstance(state["llm"], ChatGoogleGenerativeAI):
+                    print("Sleeping to prevent Gemini API rate limit")
+                    time.sleep(7)
+                    print("Done sleeping")
+
+                llm: ChatGoogleGenerativeAI | ChatOllama = state["llm"]
                 llm_with_tools = llm.bind_tools(self.tools)
+              
                 template = state["template"]
                 prompt = ChatPromptTemplate.from_template(template)
+                if state["missing_tool_calls"]:
+                    state["missing_tool_calls"] = False
+                    prompt.append(SystemMessage(content="You are not calling any tools, and the game has not yet ended. You put your command in **Actions** but forgot to also put it in tool calls. Call some tools."))
                 chain = prompt | llm_with_tools
-                result = await chain.ainvoke(
+      
+                # result = await chain.ainvoke(
+                #     {
+                #         "history": state["history"],
+                #         "current_step": state["current_step"],
+                #         "maximum_step": state["maximum_step"],
+                #     }
+                # )
+
+                result = AIMessageChunk(content="")
+
+                print("-- THINKING TIME --\n")
+                async for chunk in chain.astream(
                     {
-                        "history": state["history"],
-                        "current_step": state["current_step"],
-                        "maximum_step": state["maximum_step"],
-                    }
-                )
-                # time.sleep(7)
+                    "history": state["history"],
+                    "current_step": state["current_step"],
+                    "maximum_step": state["maximum_step"],
+                }
+                ):
+                    if chunk.tool_calls:
+                        print(f"\n[Tool Call]: {chunk.tool_calls}", flush=True)
+                    elif chunk.content:
+                        print(chunk.content, end="", flush=True)
+                    result += chunk
+                print("\n-- DONE THINKING --\n")
+
+                if state.get("debug", False):
+                    print(f"Step = {state['current_step']}")
+                    print("\nFull LLM Response:")
+                    print(f"Content: {result.content}")
+                    print(f"Response Metadata: {getattr(result, 'response_metadata', {})}")
+                    print(f"Tool Calls: {getattr(result, 'tool_calls', [])}")
+ 
+
                 final_result = result.tool_calls
-
-            if state["debug"]:
-                print(f"Count: {state['current_step'] + 1}")
-                pprint.pp(final_result)
-
+                last_result_content = result.content
+            
             return {
                 "tool_calls": final_result,
+                "last_result_content": last_result_content,
                 "current_step": state["current_step"] + 1,
+            }
+
+        def hallucinate_counter_measure(state: State):
+            print("LLM seems to not be able to call tool. Deploying counter measure.")
+            command = ""
+            for line in state["last_result_content"].splitlines():
+                if "**Action**:" not in line:
+                    continue
+                command = line.split("**Action**:", 1)[1].strip()
+                print(f"Command detected in action: {command}")
+                break
+            else:
+                print("It seems there is neither action nor tool calls. There is nothing we can do. Giving up.")
+                exit()
+            
+            return {
+                "tool_calls": [
+                    {
+                        "name": "api-use-key",
+                        "args": {
+                            "game": state["game"],
+                            "command": command,
+                            "session_key": state["key"],
+                        },
+                        "type": "tool_call",
+                    }
+                ]
+            }
+
+        def missing_tool_calls(state: State):
+            print("LLM is hallucinating and refuse to call tools.")
+            return {
+                "missing_tool_calls": True,
+                "hallucinate_count": state["hallucinate_count"] + 1,
+                "hallucinate_count_streak": state["hallucinate_count_streak"] + 1,
             }
 
         def should_continue(state: State):
@@ -187,10 +263,15 @@ class MCPClient:
                 if state["debug"]:
                     pprint.pp("Action")
                 return "Action"
+            elif state["hallucinate_count_streak"] > 3:
+                return "HALLUCINATE_COUNTER_MEASURE"
             else:
-                return "END"
+                return "CALL"
+        
+
 
         async def call_tools(state: State):
+            state["hallucinate_count_streak"] = 0
             assert self.session is not None
             total_result = []
             key = ""
@@ -232,6 +313,7 @@ class MCPClient:
                 total_result = [total_result[0]] + total_result[
                     -state["history_max_length"] :
                 ]
+                print(len(total_result))
             return {"history": total_result, "key": key}
 
         async def summarize(state: State):
@@ -273,20 +355,23 @@ class MCPClient:
         graph.add_node("llm_call", llm_call)
         graph.add_node("environment", call_tools)
         graph.add_node("summarize", summarize)
-
+        graph.add_node("missing_tool_calls", missing_tool_calls)
+        graph.add_node("hallucinate_counter_measure", hallucinate_counter_measure)
         graph.add_edge(START, "llm_call")
         graph.add_conditional_edges(
             "llm_call",
             should_continue,
-            {"Action": "environment", "END": "summarize"},
+            {"Action": "environment", "END": "summarize", "CALL": "missing_tool_calls", "HALLUCINATE_COUNTER_MEASURE": "hallucinate_counter_measure"},
         )
+        graph.add_edge("missing_tool_calls", "llm_call")
+        graph.add_edge("hallucinate_counter_measure", "environment")
         graph.add_edge("environment", "llm_call")
         graph.add_edge("summarize", END)
         agent = graph.compile()
         self.agent = agent
 
     async def talk_with_zork(
-        self, history: list[str], model: Any, category: str, debug: bool
+        self, history: list[str], model: ChatGoogleGenerativeAI | ChatOllama, category: str, debug: bool
     ):
         match category:
             case "react_framework":
@@ -362,6 +447,10 @@ class MCPClient:
                         "debug": debug,
                         "key": "",
                         "game": "zork1",
+                        "missing_tool_calls": False,
+                        "hallucinate_count": 0,
+                        "hallucinate_count_streak": 0,
+                        "last_result_content": ""
                     },
                     config={"recursion_limit": 300},
                 )
@@ -379,26 +468,23 @@ class MCPClient:
                             - Based on the previous result, use the previous generated key and assign proper command to play zork
                             
                         ## Important ##
-                            - Do not repeat the same command
-                            - Do not stop and keep playing
-                            - There are some randomness in the game, so be adaptive and adjust your strategy accordingly 
-                            - You must follow the ReAct Prompt ,and think like ReAct Prompt
+                            - Avoid repeating the same command multiple times in a row
+                            - You must follow the ReAct Prompt, and think like ReAct Prompt
                          
                         ## ReAct Prompt ##
                             You are an expert Zork 1 player using ReAct (Reasoning + Acting) methodology. Your goal is to achieve the maximum 350 points by collecting all 20 treasures and placing them in the Living Room trophy case.
 
                             Follow this exact format for every turn:
 
-                            **Thought [N]**: [Analyze current situation, state your reasoning, plan next action based on game state, inventory, and objectives]
+                            **Thought**: [Analyze current situation, state your reasoning, plan next action based on game state, inventory, and objectives. Make sure your analysis is concise and efficient]
 
-                            **Action [N]**: [Single Zork 1 command]
+                            **Action**: [Single Zork 1 command]
 
-                            **Observation [N]**: [Game's response - wait for this before next thought]
+                            **Observation**: [Game's response - wait for this before next thought]
 
                             KEY OBJECTIVES:
                             - Collect all 20 treasures and place in trophy case (350 total points)
                             - Manage inventory carefully (weight/space limits)
-                            - Save before dangerous encounters (troll, thief, random events)
                             - Essential items: lamp (light source), sword (combat), garlic (vampire bat)
                             - The thief steals treasures but you get them back when you defeat him
 
@@ -427,7 +513,7 @@ class MCPClient:
                             Start with:
                             **Thought 1**: I'm beginning Zork 1. My ultimate goal is 350 points from all treasures in the trophy case. I should start by examining my surroundings and getting the leaflet from the mailbox for initial game information.
 
-                            **Action 1**: look               
+                            **Action 1**: look
                         """
             
             # case "test_implement":
@@ -482,14 +568,18 @@ class MCPClient:
                         "llm": model,
                         "template": template,
                         "history": [],
-                        "history_max_length": 10,
+                        "history_max_length": 7,
                         "tool_calls": [],
                         "structured_response": None,
                         "current_step": 0,
-                        "maximum_step": 550,
+                        "maximum_step": 500,
                         "debug": debug,
                         "key": "",
                         "game": "zork1",
+                        "missing_tool_calls": False,
+                        "hallucinate_count": 0,
+                        "hallucinate_count_streak": 0,
+                        "last_result_content": "",
                     },
                     config={"recursion_limit": 1200},
                     # Recurstion limit should be > 2 * maximum step
@@ -537,6 +627,7 @@ async def main():
         "score",
         "current_step",
         "maximum_step",
+        "hallucinate_count"
     ]
     with open(
         f"{test_result}/result_{model.model.replace('/','-').replace(':', '-')}_{current}.csv",
@@ -566,6 +657,7 @@ async def main():
                 print(f"maximum_step : {result['maximum_step']}")
                 final_result["current_step"] = result["current_step"]
                 final_result["maximum_step"] = result["maximum_step"]
+                final_result["hallucinate_count"] = result["hallucinate_count"]
 
             test = [final_result]
             pprint.pp(f"Iteration {i+1} completed.")
