@@ -29,6 +29,7 @@ import time
 import json
 import re
 import trace
+import math
 
 
 load_dotenv("./mcp-client/.env")
@@ -230,7 +231,9 @@ class MCPClient:
                 break
             else:
                 print("It seems there is neither action nor tool calls. There is nothing we can do. Giving up.")
-                exit()
+                return {
+                    "current_step": math.infinity
+                }
             
             return {
                 "tool_calls": [
@@ -309,11 +312,9 @@ class MCPClient:
                 total_result.append({"response": f"Error: {str(e)}"})
             total_result = state["history"] + total_result
             if len(total_result) > state["history_max_length"]:
-                print("Trimming history")
                 total_result = [total_result[0]] + total_result[
                     -state["history_max_length"] :
                 ]
-                print(len(total_result))
             return {"history": total_result, "key": key}
 
         async def summarize(state: State):
