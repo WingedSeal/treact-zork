@@ -20,6 +20,7 @@ pyproject.toml
 mcp-server_logs/*
 
 zork-tool_logs/*
+zork-tool/zork-tool_logs/*
 
 test_result/*
 
