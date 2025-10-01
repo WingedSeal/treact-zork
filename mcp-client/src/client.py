@@ -51,33 +51,34 @@ if api_key:
     )
 else:
     # model = ChatOllama(model="gpt-oss:20b", temperature=0)
-    model = ChatOllama(model="qwen3:8b", temperature=0) 
+    model = ChatOllama(model="qwen3:8b", temperature=0)
     # model = ChatOllama(model="llama3.1:latest", temperature=0)
 
-class response(BaseModel):
-    game_completed: Annotated[
-        bool,
-        Field(
-            description="True if the Zork game has been successfully completed by collecting all 20 treasures "
-            "and achieving victory. False if the game is still in progress or if the player has died. "
-            "Only set to True when the game explicitly indicates victory/winning condition met."
-        ),
-    ]
-    current_status: Annotated[
-        str,
-        Field(
-            description="Current game state description including: current location, recent game response, "
-            "inventory status, immediate objectives, or any important game feedback. "
-            "This helps track progress and inform the next decision."
-        ),
-    ]
 
-    score: Annotated[
-        int,
-        Field(
-            description="Current score in the Zork game, representing the number of treasures collected so far."
-        ),
-    ]
+# class response(BaseModel):
+#     game_completed: Annotated[
+#         bool,
+#         Field(
+#             description="True if the Zork game has been successfully completed by collecting all 20 treasures "
+#             "and achieving victory. False if the game is still in progress or if the player has died. "
+#             "Only set to True when the game explicitly indicates victory/winning condition met."
+#         ),
+#     ]
+#     current_status: Annotated[
+#         str,
+#         Field(
+#             description="Current game state description including: current location, recent game response, "
+#             "inventory status, immediate objectives, or any important game feedback. "
+#             "This helps track progress and inform the next decision."
+#         ),
+#     ]
+
+#     score: Annotated[
+#         int,
+#         Field(
+#             description="Current score in the Zork game, representing the number of treasures collected so far."
+#         ),
+#     ]
 
 
 class State(TypedDict):
@@ -88,6 +89,7 @@ class State(TypedDict):
     history_max_length: int
 
     tool_calls: list[Any]
+    last_result_content: str
     structured_response: Any
 
     current_step: int
@@ -100,9 +102,10 @@ class State(TypedDict):
 
     missing_tool_calls: bool
     hallucinate_count: int
-    hallucinate_count_streak: int
-    last_result_content: str
+    hallucinate_count_threshold: int
+    hallucinate_streak: int
 
+    give_up: bool
 
 
 class MCPClient:
@@ -151,54 +154,39 @@ class MCPClient:
                         "type": "tool_call",
                     }
                 ]
-            elif state["current_step"] >= state["maximum_step"] - 1:
-                final_result = [
-                    {
-                        "name": "api-get-chat-log",
-                        "args": {
-                            "game": state["game"],
-                            "session_key": state["key"],
-                        },
-                        "type": "tool_call",
-                    }
-                ]
             else:
-                if isinstance(state["llm"], ChatGoogleGenerativeAI):
-                    print("Sleeping to prevent Gemini API rate limit")
-                    time.sleep(7)
-                    print("Done sleeping")
+
+                assert self.tools is not None
 
                 llm: ChatGoogleGenerativeAI | ChatOllama = state["llm"]
                 llm_with_tools = llm.bind_tools(self.tools)
-              
+
                 template = state["template"]
                 prompt = ChatPromptTemplate.from_template(template)
+
+                # Handle missing tool calls by appending a system message to force calling an action
                 if state["missing_tool_calls"]:
                     state["missing_tool_calls"] = False
-                    prompt.append(SystemMessage(content="You are not calling any tools, and the game has not yet ended. You put your command in **Actions** but forgot to also put it in tool calls. Call some tools."))
+                    prompt.append(
+                        SystemMessage(
+                            content="You are not calling any tools, and the game has not yet ended. You put your command in **Actions** but forgot to also put it in tool calls. Call some tools."
+                        )
+                    )
                 chain = prompt | llm_with_tools
-      
-                # result = await chain.ainvoke(
-                #     {
-                #         "history": state["history"],
-                #         "current_step": state["current_step"],
-                #         "maximum_step": state["maximum_step"],
-                #     }
-                # )
 
                 result = AIMessageChunk(content="")
-
                 print("-- THINKING TIME --\n")
                 async for chunk in chain.astream(
                     {
-                    "history": state["history"],
-                    "current_step": state["current_step"],
-                    "maximum_step": state["maximum_step"],
-                }
+                        "history": state["history"],
+                        "current_step": state["current_step"],
+                        "maximum_step": state["maximum_step"],
+                    }
                 ):
-                    if chunk.tool_calls:
-                        print(f"\n[Tool Call]: {chunk.tool_calls}", flush=True)
-                    elif chunk.content:
+                    tool_calls = getattr(chunk, "tool_calls", None)
+                    if tool_calls:
+                        print(f"\n[Tool Call]: {tool_calls}", flush=True)
+                    elif getattr(chunk, "content", None):
                         print(chunk.content, end="", flush=True)
                     result += chunk
                 print("\n-- DONE THINKING --\n")
@@ -207,13 +195,14 @@ class MCPClient:
                     print(f"Step = {state['current_step']}")
                     print("\nFull LLM Response:")
                     print(f"Content: {result.content}")
-                    print(f"Response Metadata: {getattr(result, 'response_metadata', {})}")
+                    print(
+                        f"Response Metadata: {getattr(result, 'response_metadata', {})}"
+                    )
                     print(f"Tool Calls: {getattr(result, 'tool_calls', [])}")
- 
 
-                final_result = result.tool_calls
+                final_result = getattr(result, "tool_calls", [])
                 last_result_content = result.content
-            
+
             return {
                 "tool_calls": final_result,
                 "last_result_content": last_result_content,
@@ -230,11 +219,11 @@ class MCPClient:
                 print(f"Command detected in action: {command}")
                 break
             else:
-                print("It seems there is neither action nor tool calls. There is nothing we can do. Giving up.")
-                return {
-                    "current_step": math.infinity
-                }
-            
+                print(
+                    "It seems there is neither action nor tool calls. There is nothing we can do. Giving up."
+                )
+                return {"give_up": True}
+
             return {
                 "tool_calls": [
                     {
@@ -246,7 +235,9 @@ class MCPClient:
                         },
                         "type": "tool_call",
                     }
-                ]
+                ],
+                "hallucinate_count": 0,
+                "hallucinate_streak": state["hallucinate_streak"] + 1,
             }
 
         def missing_tool_calls(state: State):
@@ -254,11 +245,16 @@ class MCPClient:
             return {
                 "missing_tool_calls": True,
                 "hallucinate_count": state["hallucinate_count"] + 1,
-                "hallucinate_count_streak": state["hallucinate_count_streak"] + 1,
             }
 
         def should_continue(state: State):
-            if state["current_step"] > state["maximum_step"]:
+            if state["give_up"]:
+                if state["debug"]:
+                    pprint.pp("Giving up from Hallucination")
+                return "END"
+            elif state["hallucinate_count"] > state["hallucinate_count_threshold"]:
+                return "HALLUCINATE_COUNTER_MEASURE"
+            elif state["current_step"] > state["maximum_step"]:
                 if state["debug"]:
                     pprint.pp(f"Reach Maximum")
                 return "END"
@@ -266,25 +262,18 @@ class MCPClient:
                 if state["debug"]:
                     pprint.pp("Action")
                 return "Action"
-            elif state["hallucinate_count_streak"] > 3:
-                return "HALLUCINATE_COUNTER_MEASURE"
             else:
-                return "CALL"
-        
-
+                return "MISSING_CALL"
 
         async def call_tools(state: State):
-            state["hallucinate_count_streak"] = 0
             assert self.session is not None
             total_result = []
             key = ""
-            try:
-                for tool in state["tool_calls"]:
+            for tool in state["tool_calls"]:
+                try:
                     result = await self.session.call_tool(
                         tool["name"], arguments=tool["args"]
                     )
-
-
                     if state["debug"]:
                         pprint.pp(result)
                     content = result.content[0]
@@ -294,7 +283,6 @@ class MCPClient:
                         )
                     if state["debug"]:
                         pprint.pp(content)
-                        pprint.pp(type(content))
 
                     final_result = orjson.loads(content.text)
                     key = final_result.get("new_key", state["key"])
@@ -307,9 +295,15 @@ class MCPClient:
                             "response": final_result,
                         }
                     )
+                except Exception as e:
+                    total_result.append(
+                        {
+                            "tool_name": tool["name"],
+                            "arguments": tool["args"],
+                            "response": f"Error: {str(e)}",
+                        }
+                    )
 
-            except Exception as e:
-                total_result.append({"response": f"Error: {str(e)}"})
             total_result = state["history"] + total_result
             if len(total_result) > state["history_max_length"]:
                 total_result = [total_result[0]] + total_result[
@@ -320,9 +314,12 @@ class MCPClient:
         async def summarize(state: State):
             print("Summarizing")
             try:
+                assert self.session is not None
                 await self.session.call_tool(
-                        name = "api-gen-chat-log", arguments={"game": state["game"], "session_key": state["key"]}
+                    name="api-get-chat-log",
+                    arguments={"game": state["game"], "session_key": state["key"]},
                 )
+
                 template = """Summarize the following history of commands and responses from playing zork in Json format with the following keys:
                             1. game_completed: True if the Zork game has been successfully completed by collecting all 20 treasures and achieving victory. False if the game is still in progress or if the player has died. Only set to True when the game explicitly indicates victory/winning condition met.
                             2. current_status: Current game state description including: current location, recent game response, inventory status, immediate objectives, or any important game feedback. This helps track progress and inform the next decision.
@@ -343,14 +340,20 @@ class MCPClient:
                 prompt = ChatPromptTemplate.from_template(template)
                 chain = prompt | state["llm"]
                 result = await chain.ainvoke({"history": state["history"][1:]})
-                json_match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', result.content, re.DOTALL)
-                structured_result = json.loads(json_match.group()) 
+                json_match = re.search(
+                    r"\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}", result.content, re.DOTALL
+                )
+                assert json_match is not None, "No JSON object found in the response"
+                structured_result = json.loads(json_match.group())
                 return {
                     "structured_response": structured_result,
                     "current_step": state["current_step"] - 1,
                 }
             except Exception as e:
-                return {"structured_response": f"Error: {str(e)}", "current_step": state["current_step"] - 1}
+                return {
+                    "structured_response": f"Error: {str(e)}",
+                    "current_step": state["current_step"] - 1,
+                }
 
         graph = StateGraph(State)
         graph.add_node("llm_call", llm_call)
@@ -362,7 +365,12 @@ class MCPClient:
         graph.add_conditional_edges(
             "llm_call",
             should_continue,
-            {"Action": "environment", "END": "summarize", "CALL": "missing_tool_calls", "HALLUCINATE_COUNTER_MEASURE": "hallucinate_counter_measure"},
+            {
+                "Action": "environment",
+                "END": "summarize",
+                "MISSING_CALL": "missing_tool_calls",
+                "HALLUCINATE_COUNTER_MEASURE": "hallucinate_counter_measure",
+            },
         )
         graph.add_edge("missing_tool_calls", "llm_call")
         graph.add_edge("hallucinate_counter_measure", "environment")
@@ -372,69 +380,27 @@ class MCPClient:
         self.agent = agent
 
     async def talk_with_zork(
-        self, history: list[str], model: ChatGoogleGenerativeAI | ChatOllama, category: str, debug: bool
+        self,
+        model: ChatGoogleGenerativeAI | ChatOllama,
+        category: str,
+        debug: bool,
     ):
         match category:
-            case "react_framework":
-                template = """
-                You are playing Zork, a text adventure game. Your goal is to collect as many treasures as possible.
-                
-                ## game = zork1 ##
+            case "standard_prompting":
+                template = """ You are playing Zork (text-based game) via accessing MCP tool
+               
+                            Goal: collect as many treasures as possible.
+                                                
+                            ### Previous result ###
+                                    {history}
 
-                ## YOUR REQUIRED STEPS ##
-                STEP 1: call api-get-dict tool to get the game dictionary (first time only)
-                STEP 2: Start the game by calling api-gen-key tool to get the generated key (first time only)
-                STEP 3: Use the generated key with the proper command as parameters for api-use-key tool
-                STEP 4: Read the game response
-                STEP 5: Then call Zork tool again with the new command and the new generated key
-                STEP 6: Repeat steps 3-5 until you have collected all 20 treasures and won the game
-                
-                ## How to track current score ##
-                - Input command 'score' to get the current score
-                
-                ### Important ###
-                - Keep tracking the game state and your inventory and also history commands
-                - When encountering troll, avoid the fight and find the sword first.
-                """
-                assert self.tools is not None
-
-                agent = create_react_agent(
-                    model=model,
-                    tools=self.tools,
-                    prompt=template,
-                    response_format=response,
-                    debug=debug,
-                )
-
-                agent_response = await agent.ainvoke(
-                    input={"messages": str(history)},
-                    config={"recursion_limit": 300},
-                )
-            case "react_implement":
-                template = """
-                    You are playing Zork, a text adventure game. Your goal is to collect as many treasures as possible.
-
-                    ### Current History of tool calls and output ###
-                    {history}
-
-                    ## YOUR REQUIRED STEPS ##
-                    STEP 1: call api-get-dict tool to get the game dictionary (first time only)
-                    STEP 2: Start the game by calling api-gen-key tool to get the generated key (first time only)
-                    STEP 3: Use the generated key with the proper command as parameters for api-use-key tool
-                    STEP 4: Read the game response
-                    STEP 5: Then call Zork tool again with the new command and the new generated key
-                    STEP 6: Repeat steps 3-5 for {maximum_step} times, then proceed to quit the game with the current status
-
-                    ## How to track current score ##
-                    - Input command 'score' to get the current score
-                    
-                    ### Important ###
-                    - Keep tracking the game state and your inventory and also history commands
-                    - when the current step : {current_step} = {maximum_step}, you must quit the game
-                    - When encountering troll, avoid the fight and find the sword first.
-                    - Do not repeat the same action for more than 3 times.
-                    - Do not stop until the current step equals to {maximum_step}.
-                    """
+                            ### Instruction ###
+                                    - Based on the previous result, use the previous generated key and assign proper command to play Zork
+                                                    
+                            ## Important ##
+                                    - Do not repeat the same command
+                                    - Do not stop and keep playing
+                            """
                 agent_response = await self.agent.ainvoke(
                     {
                         "llm": model,
@@ -442,22 +408,24 @@ class MCPClient:
                         "history": [],
                         "history_max_length": 20,
                         "tool_calls": [],
+                        "last_result_content": "",
                         "structured_response": None,
                         "current_step": 0,
-                        "maximum_step": 20,
+                        "maximum_step": 1200,
                         "debug": debug,
                         "key": "",
                         "game": "zork1",
                         "missing_tool_calls": False,
                         "hallucinate_count": 0,
-                        "hallucinate_count_streak": 0,
-                        "last_result_content": ""
+                        "hallucinate_count_threshold": 3,
+                        "hallucinate_streak": 0,
+                        "give_up": False,
                     },
-                    config={"recursion_limit": 300},
+                    config={"recursion_limit": 1200},
+                    # Recursion limit should be > 2 * maximum step
                 )
-            
-            # ReAct Prompt
-            case "test_implement":
+
+            case "react_prompting":
                 template = """ You are playing Zork (text-based game) via accessing MCP tool
                 
                         Goal: collect as many treasures as possible.
@@ -516,74 +484,29 @@ class MCPClient:
 
                             **Action 1**: look
                         """
-            
-            # case "test_implement":
-            #     template = """ You are playing Zork (text-based game) via accessing MCP tool
-                
-            #             Goal: collect as many treasures as possible.
-                        
-            #             ### Previous result ###
-            #             {history}
-
-            #             ### Instruction ###
-            #                 - Based on the previous result, use the previous generated key and assign proper command to play zork
-                            
-            #             ## Important ##
-            #                 - Do not repeat the same command
-            #                 - Do not stop and keep playing
-            #                 - There are some randomness in the game, so be adaptive and adjust your strategy accordingly (incase it does not go as planned)
-
-            #             ## Answer Key ##
-
-                        
-
-            #                 (You begin outside a white house) N, E, E, N, W, U (into the tree), GET EGG, D, S, E, OPEN WINDOW, IN, GET SACK AND BOTTLE, W, GET LAMP AND SWORD, E, U, LIGHT LAMP, GET ROPE AND KNIFE, D, W, MOVE RUG (under it is a trapdoor), OPEN TRAPDOOR, D (someboyd slams the trapdoor shut), N, KILL TROLL WITH SWORD (till he dies), DROP SWORD, S, S, E, GET PAINTING, W, N, N, W, W, W, U, GET BAG, SW, E, S, SE, OPEN SACK (you notice some food and a clove of garlic), GIVE LUNCH AND WATER TO CYCLOPS (he falls asleep), ULYSSES (startled, he runs off and breaks the door in the process! You ought to save your game here), U (the thief appears and attacks you), GIVE EGG TO THIEF, KILL THIEF WITH KNIFE (until he dies. You may then take the chalice and the now open egg), DROP KNIFE AND BOTTLE, GET CHALICE AND EGG, D, E, E, OPEN CASE, PUT PAINTING,CHALICE AND COINS IN CASE, TURN OFF LAMP, E, E, E, N, W, WIND UP CANARY (inside the egg. A bird flies into view and drops a bauble), GET BAUBLE, GET CANARY, S, E, IN, W, PUT EGG;BAUBLE AND CANARY IN CASE, OPEN TRAPDOOR, D, LIGHT LAMP, N, E, E, SE, E, TIE ROPE TO RAILING, D, GET TORCH, EXTINGUISH LAMP, S, DROP ALL BUT TORCH, E, OPEN COFFIN (you find a sceptre), GET COFFIN AND SCEPTRE, W, TEMPLE (you are teleported to the thief's treasure chamber), D, E, E, PUT COFFIN IN CASE, E, E, E, E, D, D, N, WAVE SCEPTRE (the rainbow becomes solid), E, W, GET POT (the usual one!), SW, U, U, W, N, W, IN, W, PUT POT AND SCEPTRE IN CASE, D, N, E, E, E, ECHO (the echo changes), GET BAR, U, E, N, GET MATCHBOOK, N, GET WRENCH AND SCREWDRIVER, PRESS YELLOW (the bubble by the dam starts glowing), S, S, TURN BOLT WITH WRENCH (the water drains away), DROP WRENCH, W, WAIT (5 times. The water level is low enough for you to cross the river), N, GET TRUNK, N, GET PUMP, S, S, SE, D, W, SE, E, D, S, TEMPLE (to the treasure chamber), D, E, E, PUT BAR AND TRUNK IN CASE, W, W, U, TEMPLE (back again), GET ALL (incl. BELL), S, GET BOOK AND CANDLES, BLOW OUT CANDLES, D, D, RING BELL (the spirits are frightened. You drop the candles), LIGHT MATCH, LIGHT CANDLES WITH MATCH (the spirits are terrified), READ PRAYER (they make their escape), S, DROP BOOK AND CANDLES, GET SKULL, N, U, N, N, N, E, U, E, D, INFLATE BOAT WITH PUMP (the plastic is actually a small boat!), DROP PUMP, GET IN BOAT, LAUNCH IT, WAIT 10 (you sail down-river to a buoy), GET BUOY, E, GET OUT OF BOAT, DROP BUOY, OPEN IT (it contains and emerald), GET EMERALD AND SHOVEL, NE, DIG IN SAND WITH SHOVEL, AGAIN, AGAIN, AGAIN (you uncover a scarab), DROP SHOVEL, GET SCARAB, SW, S, S, W (across the rainbow), W, SW, U, U, W, N, W, IN, W, PUT SKULL;EMERALD AND SCARAB IN CASE, D, N, E, N, NE, N, N, N, GET TRIDENT, U, N, N, W, N, W, GET GARLIC, N (the bat stays away, thanks to the garlic), E, PUT TORCH AND
-            #                 SCREWDRIVER IN BASKET, N, LIGHT LAMP, D, GET BRACELET, E, NE, SE, SW, D, D, S, GET COAL, N, U, U, N, E, S, N, U, S, PUT COAL IN BASKET, LOWER BASKET (to 'Drafty Room'), N, D, E, NE, SE, SW, D, D, W, DROP ALL, W, GET COAL;TORCH AND SCREWDRIVER, S, OPEN LID, PUT COAL IN MACHINE (to be found again in "Zork III"!), CLOSE LID, TURN SWITCH WITH SCREWDRIVER (the coal turns into a diamond), OPEN LID, GET DIAMOND, DROP SCREWDRIVER, N, PUT TORCH AND DIAMOND IN BASKET, E, GET AL BUT TIMBER AND SACK, E, U, U, N, E, S, N, U, S, RAISE BASKET, GET DIAMOND AND TORCH, W, GET FIGURINE, S, E, S, D (through the slide to 'Cellar'), U, PUT FIGURINE;TRIDENT;BRACELET;DIAMOND AND TORCH IN CASE (a map appears in the case), GET MAP, E, E, S, W, SW (using the secret path), ENTER BARROW ("Zork II" awaits. Later!!)
-
-            #                 TREASURES:
-            #                         1. Bar - in 'Echo Room'
-            #                         2. Trident - in 'Atlantis Room'
-            #                         3. Trunk - in 'Reservoir'
-            #                         4. Emerald - inside the buoy in the river
-            #                         5. Scarab - buried in 'Sandy Cave'
-            #                         6. Egg - in the tree
-            #                         7. Jade Figurine - in 'Bat Room'
-            #                         8. Bag of Coins - in 'Maze'
-            #                         9. Chalice - in 'Treasure Room'
-            #                     10. Canary - inside the egg
-            #                     11. Coffin - in 'Egyptian Room' in the temple
-            #                     12. Torch - in 'Torch Room'
-            #                     13. Sceptre - in the coffin
-            #                     14. Bauble - with the bird
-            #                     15. Pot of Gold - at 'End of Rainbow'
-            #                     16. Painting - in 'Gallery'
-            #                     17. Bracelet - in 'Gas Room'
-            #                     18. Diamond - from the coal after a trip to 'Machine Room'
-            #                     19. Crystal Skull - in 'Land of the Dead'
-
-                     
-            #             """
 
                 agent_response = await self.agent.ainvoke(
                     {
                         "llm": model,
                         "template": template,
                         "history": [],
-                        "history_max_length": 7,
+                        "history_max_length": 20,
                         "tool_calls": [],
+                        "last_result_content": "",
                         "structured_response": None,
                         "current_step": 0,
-                        "maximum_step": 500,
+                        "maximum_step": 1200,
                         "debug": debug,
                         "key": "",
                         "game": "zork1",
                         "missing_tool_calls": False,
                         "hallucinate_count": 0,
-                        "hallucinate_count_streak": 0,
-                        "last_result_content": "",
+                        "hallucinate_count_threshold": 3,
+                        "hallucinate_streak": 0,
+                        "give_up": False,
                     },
                     config={"recursion_limit": 1200},
-                    # Recurstion limit should be > 2 * maximum step
+                    # Recursion limit should be > 2 * maximum step
                 )
             case _:
                 raise Exception("Please assign the type of prompting")
@@ -628,7 +551,9 @@ async def main():
         "score",
         "current_step",
         "maximum_step",
-        "hallucinate_count"
+        "hallucinate_count",
+        "hallucinate_count_threshold",
+        "hallucinate_streak",
     ]
     with open(
         f"{test_result}/result_{model.model.replace('/','-').replace(':', '-')}_{current}.csv",
@@ -639,29 +564,30 @@ async def main():
         writer.writeheader()
     print(f"Model: {model.model}")
     try:
-        history = []
-        category = "test_implement"
-        react = ["react_framework"]
+        category = "standard_prompting"
         debug = True
         for i in tqdm(iterable=range(1)):
             result = await client.talk_with_zork(
-                history=history, model=model, category=category, debug=debug
+                model=model, category=category, debug=debug
             )
-            # pprint.pp(result)
+            pprint.pp(f"Iteration {i+1} completed.")
+
             final_result = result["structured_response"]
             # final_result = result["structured_response"].model_dump()
-            for key, value in final_result.items():
-                print(f"{key} : {value}")
+            # for key, value in final_result.items():
+            #     print(f"{key} : {value}")
 
-            if category not in react:
-                print(f"current_step : {result['current_step']}")
-                print(f"maximum_step : {result['maximum_step']}")
-                final_result["current_step"] = result["current_step"]
-                final_result["maximum_step"] = result["maximum_step"]
-                final_result["hallucinate_count"] = result["hallucinate_count"]
+            # print(f"current_step : {result['current_step']}")
+            # print(f"maximum_step : {result['maximum_step']}")
+            final_result["current_step"] = result["current_step"]
+            final_result["maximum_step"] = result["maximum_step"]
+            final_result["hallucinate_count"] = result["hallucinate_count"]
+            final_result["hallucinate_count_threshold"] = result[
+                "hallucinate_count_threshold"
+            ]
+            final_result["hallucinate_streak"] = result["hallucinate_streak"]
 
             test = [final_result]
-            pprint.pp(f"Iteration {i+1} completed.")
             with open(
                 f"{test_result}/result_{model.model.replace('/','-').replace(':', '-')}_{current}.csv",
                 "a",
