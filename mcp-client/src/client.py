@@ -49,7 +49,7 @@ if api_key:
         temperature=0,
         # max_output_tokens=8000,
         include_thoughts=True,
-        thinking_budget=-1,
+        thinking_budget=1024,
     )
 else:
     # model = ChatOllama(model="gpt-oss:20b", temperature=0)
@@ -178,6 +178,7 @@ class MCPClient:
 
                 result = AIMessageChunk(content="")
                 print("-- THINKING TIME --\n")
+                time.sleep(2)
                 async for chunk in chain.astream(
                     {
                         "history": state["history"],
@@ -308,9 +309,10 @@ class MCPClient:
 
             total_result = state["history"] + total_result
             if len(total_result) > state["history_max_length"]:
-                total_result = [total_result[0]] + total_result[
-                    -state["history_max_length"] :
-                ]
+                # total_result = [total_result[0]] + total_result[
+                #     -state["history_max_length"] :
+                # ]
+                total_result = total_result[-state["history_max_length"] :]
             return {"history": total_result, "key": key}
 
         async def summarize(state: State):
@@ -392,8 +394,40 @@ class MCPClient:
             case "standard_prompting":
                 template = """ You are playing Zork (text-based game) via accessing MCP tool
                
-                            Goal: collect as many treasures as possible.
-                                                
+                            Goal: collect as many treasures as possible and putting them in the trophy case in the Living Room of the house.
+                                The following is the list of treasures and their locations:
+                                (1)Above Ground
+                                    - Jeweled egg
+                                (2) Cellar and Maze
+                                    - Bag of coins
+                                    - Painting
+
+                                (3) Dam and Reservoir
+                                    - Platinum bar
+                                    - Trunk of jewels
+                                    - Crystal trident
+
+                                (4) Temple Area
+                                    - Ivory torch
+                                    - Gold coffin
+                                    - Sceptre
+                                    - Crystal skull
+
+                                (5) Old Man River
+                                    - Emerald
+                                    - Scarab
+                                    - Pot of gold
+
+                                (6) Coal Mine
+                                    - Jade figurine
+                                    - Sapphire bracelet
+                                    - Diamond
+
+                                (7) Treasure Room and Barrow
+                                    - Silver chalice
+                                    - Clockwork canary
+                                    - Brass bauble
+
                             ### Previous result ###
                                     {history}
 
@@ -409,12 +443,12 @@ class MCPClient:
                         "llm": model,
                         "template": template,
                         "history": [],
-                        "history_max_length": 20,
+                        "history_max_length": 40,
                         "tool_calls": [],
                         "last_result_content": "",
                         "structured_response": None,
                         "current_step": 0,
-                        "maximum_step": 5,
+                        "maximum_step": 200,
                         "debug": debug,
                         "key": "",
                         "game": "zork1",
@@ -431,7 +465,39 @@ class MCPClient:
             case "react_prompting":
                 template = """ You are playing Zork (text-based game) via accessing MCP tool
                 
-                        Goal: collect as many treasures as possible.
+                        Goal: collect as many treasures as possible and putting them in the trophy case in the Living Room of the house.
+                                The following is the list of treasures and their locations:
+                                (1)Above Ground
+                                    - Jeweled egg
+                                (2) Cellar and Maze
+                                    - Bag of coins
+                                    - Painting
+
+                                (3) Dam and Reservoir
+                                    - Platinum bar
+                                    - Trunk of jewels
+                                    - Crystal trident
+
+                                (4) Temple Area
+                                    - Ivory torch
+                                    - Gold coffin
+                                    - Sceptre
+                                    - Crystal skull
+
+                                (5) Old Man River
+                                    - Emerald
+                                    - Scarab
+                                    - Pot of gold
+
+                                (6) Coal Mine
+                                    - Jade figurine
+                                    - Sapphire bracelet
+                                    - Diamond
+
+                                (7) Treasure Room and Barrow
+                                    - Silver chalice: 
+                                    - Clockwork canary
+                                    - Brass bauble
                         
                         ### Previous result ###
                         {history}
@@ -722,7 +788,7 @@ async def main():
     try:
         category = "react_prompting"
         debug = True
-        for i in tqdm(iterable=range(1)):
+        for i in tqdm(iterable=range(5)):
             result = await client.talk_with_zork(
                 model=model, category=category, debug=debug
             )
