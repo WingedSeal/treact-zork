@@ -41,7 +41,7 @@ mcp = FastMCP(
 @mcp.tool(name="api-gen-key")
 def api_gen_key(game: str) -> dict:
     """
-    Generate a new Session with a new key to access for the given game.
+    Generate a new Session with a new key to access for the given game. Use this tool one time.
 
     Arguments:
         game: str: The game to start a new session
@@ -99,18 +99,18 @@ def api_use_key(game: str, command: str, session_key: str) -> dict:
 @mcp.tool(name="api-get-words")
 def api_get_words(game: str) -> dict:
     """
-    Get the list of all possible words from the given game.
-    (Must be used only one time)
+        Get the list of all possible words from the given game.
+        (Must be used only one time)
 
-#     Arguments:
-#         None
+    #     Arguments:
+    #         None
 
-    Returns:
-        dict: The list of all possible commands from the given game.
+        Returns:
+            dict: The list of all possible commands from the given game.
 
-#     Examples:
-#         {"words": ["take", "inventory", "north", "lamp", ...]}
-#     """
+    #     Examples:
+    #         {"words": ["take", "inventory", "north", "lamp", ...]}
+    #"""
 
     try:
         result = httpx.get(
