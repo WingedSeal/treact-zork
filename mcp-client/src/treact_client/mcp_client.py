@@ -3,7 +3,6 @@ from mcp import ClientSession
 from langgraph.prebuilt import create_react_agent
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_mcp_adapters.tools import load_mcp_tools
-import asyncio
 import pprint
 import os
 from typing import Optional, Any, Annotated
@@ -18,7 +17,7 @@ from typing import Any
 import orjson
 from langchain_core.prompts import ChatPromptTemplate
 from langgraph.graph import StateGraph, START, END
-from typing_extensions import TypedDict
+from typing import TypedDict
 import csv
 import datetime
 from tqdm import tqdm
@@ -738,7 +737,7 @@ class MCPClient:
 client = MCPClient()
 
 
-async def main():
+async def run_client():
     await client.connect_to_server()
     current = datetime.datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
     fields = [
@@ -797,8 +796,3 @@ async def main():
 
     await client.cleanup()
     return
-
-
-if __name__ == "__main__":
-    # uvicorn.run(app, host=os.getenv("SERVER_IP"), port=int(os.getenv("CLIENT_PORT")))
-    asyncio.run(main())
