@@ -10,8 +10,6 @@ from typing import Optional, Any, Annotated
 from contextlib import AsyncExitStack
 from mcp.client.streamable_http import streamablehttp_client
 from pydantic import BaseModel, Field
-from fastapi import FastAPI
-import uvicorn
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from langchain_core.messages import SystemMessage, AIMessageChunk, AIMessage
@@ -26,10 +24,6 @@ import datetime
 from tqdm import tqdm
 from mcp.types import TextContent
 import time
-import json
-import re
-import trace
-import math
 
 
 load_dotenv("./mcp-client/.env")
@@ -742,26 +736,6 @@ class MCPClient:
 
 # Global client instance
 client = MCPClient()
-
-
-# @asynccontextmanager
-# async def lifespan(app: FastAPI):
-#     # Startup
-#     await client.connect_to_server()
-#     print("MCP Client connected and ready!")
-#     yield
-#     # Shutdown
-#     await client.cleanup()
-#     print("MCP Client cleaned up!")
-
-
-# app = FastAPI(title="python application", lifespan=lifespan)
-
-
-# @app.post("/react/")
-# async def process_query():
-#     result = await client.talk_with_zork()
-#     return result
 
 
 async def main():
