@@ -20,7 +20,8 @@ dependencies = [
 ]
 
 [project.scripts]
-client = "main:async_main"
+react-client = "main:react_client"
+treact-client = "main:treact_client"
 
 [tool.poetry]
 packages = [

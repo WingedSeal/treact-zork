@@ -25,9 +25,9 @@ from mcp.types import TextContent
 import time
 
 
-load_dotenv("./mcp-client/.env")
+load_dotenv(".env")
 
-test_result = "./logs/test_result"
+test_result = "./logs"
 if not os.path.exists(test_result):
     os.makedirs(test_result)
 

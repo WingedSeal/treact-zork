@@ -7,7 +7,7 @@ import logging
 import datetime
 
 
-log_dir = "./logs/mcp-server_logs"
+log_dir = "./logs"
 if not os.path.exists(log_dir):
     os.makedirs(log_dir)
 
@@ -31,7 +31,7 @@ def setup_logger():
 logger = setup_logger()
 
 
-load_dotenv("./mcp-server/.env")
+load_dotenv(".env")
 
 mcp = FastMCP(
     name="mcp-server", host=os.getenv("SERVER_IP"), port=os.getenv("SERVER_PORT")
@@ -203,6 +203,5 @@ def api_get_chat_log(game: str, session_key: str) -> dict:
         pprint.pp(e)
         return {"response": f"Error: {str(e)}"}
 
-
-if __name__ == "__main__":
+def run_mcp_server():
     mcp.run(transport="streamable-http")
