@@ -13,8 +13,6 @@ frotz.exe
 *.env
 
 access_key.json
-uv.lock
-pyproject.toml
 .python-version
 
 logs/*

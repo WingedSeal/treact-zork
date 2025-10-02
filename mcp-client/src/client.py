@@ -129,7 +129,7 @@ class MCPClient:
         self.session = await self.exit_stack.enter_async_context(
             ClientSession(read_stream, write_stream)
         )
-
+        assert self.session is not None
         await self.session.initialize()
 
         tool_results = await load_mcp_tools(self.session)
@@ -178,7 +178,7 @@ class MCPClient:
 
                 result = AIMessageChunk(content="")
                 print("-- THINKING TIME --\n")
-                time.sleep(2)
+                time.sleep(5)
                 async for chunk in chain.astream(
                     {
                         "history": state["history"],
@@ -443,12 +443,12 @@ class MCPClient:
                         "llm": model,
                         "template": template,
                         "history": [],
-                        "history_max_length": 40,
+                        "history_max_length": 10,
                         "tool_calls": [],
                         "last_result_content": "",
                         "structured_response": None,
                         "current_step": 0,
-                        "maximum_step": 200,
+                        "maximum_step": 400,
                         "debug": debug,
                         "key": "",
                         "game": "zork1",
@@ -712,7 +712,7 @@ class MCPClient:
                         "llm": model,
                         "template": template,
                         "history": [],
-                        "history_max_length": 200,
+                        "history_max_length": 40,
                         "tool_calls": [],
                         "last_result_content": "",
                         "structured_response": None,
@@ -777,8 +777,9 @@ async def main():
         "hallucinate_count_threshold",
         "hallucinate_streak",
     ]
+    category = "standard_prompting"
     with open(
-        f"{test_result}/result_{model.model.replace('/','-').replace(':', '-')}_{current}.csv",
+        f"{test_result}/{category}_{model.model.replace('/','-').replace(':', '-')}_{current}.csv",
         "w",
         newline="",
     ) as csvfile:
@@ -786,7 +787,7 @@ async def main():
         writer.writeheader()
     print(f"Model: {model.model}")
     try:
-        category = "react_prompting"
+
         debug = True
         for i in tqdm(iterable=range(5)):
             result = await client.talk_with_zork(
