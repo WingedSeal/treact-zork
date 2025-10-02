@@ -11,7 +11,7 @@ import logging
 import datetime
 
 
-log_dir = "./logs/zork-tool_logs"
+log_dir = "./logs"
 if not os.path.exists(log_dir):
     os.makedirs(log_dir)
 

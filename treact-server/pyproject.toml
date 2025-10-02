@@ -31,3 +31,10 @@ dev = [
     "mypy (>=1.18.2,<2.0.0)",
     "black (>=25.9.0,<26.0.0)"
 ]
+
+[tool.mypy]
+python_version = "3.12"
+mypy_path = "src"
+files = ["./src/treact_server/", "./src/main.py"]
+strict = true
+no_site_packages = true

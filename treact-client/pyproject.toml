@@ -16,10 +16,12 @@ dependencies = [
     "python-dotenv (>=1.1.1,<2.0.0)",
     "langchain-ollama (>=0.3.9,<0.4.0)",
     "sentence-transformers (>=5.1.1,<6.0.0)",
-    "langchain-mcp-adapters (>=0.1.10,<0.2.0)"
+    "langchain-mcp-adapters (>=0.1.10,<0.2.0)",
+    "tqdm (>=4.67.1,<5.0.0)"
 ]
 
 [project.scripts]
+standard-client = "main:standard_client"
 react-client = "main:react_client"
 treact-client = "main:treact_client"
 
@@ -36,5 +38,39 @@ build-backend = "poetry.core.masonry.api"
 [dependency-groups]
 dev = [
     "mypy (>=1.18.2,<2.0.0)",
-    "black (>=25.9.0,<26.0.0)"
+    "black (>=25.9.0,<26.0.0)",
+    "types-tqdm (>=4.67.0.20250809,<5.0.0.0)"
 ]
+
+[tool.mypy]
+python_version = "3.12"
+mypy_path = "src"
+files = ["./src/treact_client/", "./src/main.py"]
+strict = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = [
+    "mcp",
+    "mcp.*",
+    "langgraph",
+    "langgraph.*",
+    "torch",
+    "torch.*",
+    "transformers",
+    "transformers.*",
+    "sentence_transformers",
+    "sentence_transformers.*",
+    "langchain",
+    "langchain.*",
+    "langchain_google_genai",
+    "langchain_google_genai.*",
+    "langchain_core",
+    "langchain_core.*",
+    "langchain_ollama",
+    "langchain_ollama.*",
+    "langchain_mcp_adapters",
+    "langchain_mcp_adapters.*"
+]
+ignore_missing_imports = true
+follow_imports = "skip"

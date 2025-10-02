@@ -15,7 +15,9 @@ frotz.exe
 access_key.json
 .python-version
 
-logs/*
+*/logs/*
+
+logs*
 
 test_result/*
 
