@@ -3,6 +3,7 @@ import datetime
 import sys
 import os
 from pathlib import Path
+from typing import cast
 
 LOG_DIRECTORY = Path("./logs")
 LOG_DIRECTORY.mkdir(exist_ok=True)
@@ -33,7 +34,21 @@ log_level = LOG_LEVELS.get(console_log_level, logging.INFO)
 VALID_FILE_LOG_LEVELS = ("NONE", "DEBUG", "INFO")
 
 
-def get_logger(name: str) -> logging.Logger:
+class CustomLogger(logging.Logger):
+    def should_log_to_stdio(self, log_level: int) -> bool:
+        """Check if any StreamHandler writing to stdout/stderr would log the log_level messages"""
+        if not self.isEnabledFor(log_level):
+            return False
+
+        for handler in self.handlers:
+            if isinstance(handler, logging.StreamHandler):
+                if handler.stream in (sys.stdout, sys.stderr):
+                    if handler.level <= log_level:
+                        return True
+        return False
+
+
+def get_logger(name: str) -> CustomLogger:
     """
     Usage:
     ```python
@@ -70,7 +85,8 @@ def get_logger(name: str) -> logging.Logger:
         logger.addHandler(file_handler_debug)
 
     logger.propagate = False
-    return logger
+    logger.__class__ = CustomLogger
+    return cast(CustomLogger, logger)
 
 
 logger = get_logger(__name__)
