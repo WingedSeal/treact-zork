@@ -26,7 +26,7 @@ from .ai_model_response import AIModelResponse
 from .csv_logger import CSVLogger
 from .load_env import env
 from .log import get_logger
-from .state import PartialState, State
+from .state import ModelSettings, PartialState, State
 from .tool_call import ToolCall, ToolCallResult, ToolServerResponse
 
 logger = get_logger(__name__)
@@ -77,6 +77,7 @@ class MCPClient:
                 streamablehttp_client(MCP_SERVER_URL)
             )
         )
+        logger.debug(f"Session Acquired: {session_ID}")
         # print(f"Streams acquired: {read_stream=}, {write_stream=}")
         return await self.exit_stack.enter_async_context(
             ClientSession(read_stream, write_stream)
@@ -101,17 +102,17 @@ class MCPClient:
                     "tool_calls": [
                         ToolCall(
                             tool_name="gen-key",
-                            arguments={"game_name": state["game_name"]},
+                            arguments={"game_name": state["model_settings"].game_name},
                         )
                     ],
                     "last_ai_message_result_content": "",
                     "current_step": state["current_step"] + 1,
                 }
 
-            llm = state["llm"]
+            llm = state["model_settings"].llm
             llm_with_tools = llm.bind_tools(self.tools)
 
-            template = state["prompt_template"]
+            template = state["model_settings"].prompt_template
             prompt = ChatPromptTemplate.from_template(template)
 
             if state["is_missing_tool_call"]:
@@ -230,8 +231,10 @@ class MCPClient:
                 )
 
             tool_call_results = state["tool_call_result_history"] + tool_call_results
-            if len(tool_call_results) > state["history_max_length"]:
-                tool_call_results = tool_call_results[-state["history_max_length"] :]
+            if len(tool_call_results) > state["model_settings"].history_max_length:
+                tool_call_results = tool_call_results[
+                    -state["model_settings"].history_max_length :
+                ]
             return {
                 "tool_call_result_history": tool_call_results,
                 "zork_session_key": key,
@@ -245,7 +248,7 @@ class MCPClient:
                 await self.session.call_tool(
                     name="get-chat-log",
                     arguments={
-                        "game_name": state["game_name"],
+                        "game_name": state["model_settings"].game_name,
                         "session_key": state["zork_session_key"],
                     },
                 )
@@ -258,7 +261,9 @@ class MCPClient:
                     "current_step": state["current_step"] - 1,
                 }
 
-            structured_llm = state["llm"].with_structured_output(AIModelResponse)
+            structured_llm = state["model_settings"].llm.with_structured_output(
+                AIModelResponse
+            )
 
             template = prompt_template.SUMMARIZE
 
@@ -305,48 +310,28 @@ class MCPClient:
         match ai_mode:
             case AIMode.STANDARD:
                 agent_response = await self.agent.ainvoke(
-                    State(
-                        {
-                            "llm": model,
-                            "prompt_template": prompt_template.STANDARD,
-                            "tool_call_result_history": [],
-                            "history_max_length": 10,
-                            "tool_calls": [],
-                            "last_ai_message_result_content": "",
-                            "ai_model_response": None,
-                            "current_step": 0,
-                            "maximum_step": 200,
-                            "zork_session_key": "",
-                            "game_name": "zork1",
-                            "is_missing_tool_call": False,
-                            "missing_tool_call_count": 0,
-                            "missing_tool_call_threshold": 5,
-                        }
-                    ),
+                    ModelSettings(
+                        llm=model,
+                        prompt_template=prompt_template.STANDARD,
+                        game_name="zork1",
+                        maximum_step=200,
+                        missing_tool_call_threshold=5,
+                        history_max_length=10,
+                    ).to_new_state(),
                     config={"recursion_limit": 1200},
                     # Recursion limit should be > 2 * maximum step
                 )
 
             case AIMode.REACT:
                 agent_response = await self.agent.ainvoke(
-                    State(
-                        {
-                            "llm": model,
-                            "prompt_template": prompt_template.REACT,
-                            "tool_call_result_history": [],
-                            "history_max_length": 40,
-                            "tool_calls": [],
-                            "last_ai_message_result_content": "",
-                            "ai_model_response": None,
-                            "current_step": 0,
-                            "maximum_step": 200,
-                            "zork_session_key": "",
-                            "game_name": "zork1",
-                            "is_missing_tool_call": False,
-                            "missing_tool_call_count": 0,
-                            "missing_tool_call_threshold": 3,
-                        }
-                    ),
+                    ModelSettings(
+                        llm=model,
+                        prompt_template=prompt_template.REACT,
+                        game_name="zork1",
+                        maximum_step=200,
+                        missing_tool_call_threshold=3,
+                        history_max_length=40,
+                    ).to_new_state(),
                     config={"recursion_limit": 1200},
                     # Recursion limit should be > 2 * maximum step
                 )
