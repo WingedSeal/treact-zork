@@ -43,6 +43,6 @@ class CSVLogger:
                 **structured_response.model_dump(),
             },
         )
-        with self.csv_file.open("w", newline="") as file:
+        with self.csv_file.open("a", newline="") as file:
             writer = csv.DictWriter(file, fieldnames=CSVFields.__annotations__.keys())
             writer.writerow(csv_row)

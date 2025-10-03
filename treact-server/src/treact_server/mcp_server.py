@@ -38,8 +38,8 @@ mcp = FastMCP(
 )
 
 
-@mcp.tool(name="api-gen-key")
-def api_gen_key(game: str) -> dict:
+@mcp.tool(name="gen-key")
+def gen_key(game: str) -> dict:
     """
     Generate a new Session with a new key to access for the given game. Use this tool one time.
 
@@ -63,15 +63,15 @@ def api_gen_key(game: str) -> dict:
         return {"key": "Error", "response": str(e)}
 
 
-@mcp.tool(name="api-use-key")
-def api_use_key(game: str, command: str, session_key: str) -> dict:
+@mcp.tool(name="use-key")
+def use_key(game: str, command: str, session_key: str) -> dict:
     """
-    Using the session key obtained from "api-gen-key", send new command to the game.
+    Using the session key obtained from "gen-key", send new command to the game.
     However, the key can only be used once. But using it generates a new key that can be used.
 
     Arguments:
         command (str): The command to send to the game.
-        session_key (str): The session key obtained from "api-gen-key" or "api-use-key".
+        session_key (str): The session key obtained from "gen-key" or "use-key".
 
     Returns:
         dict: The response from the game server and a new session key.
@@ -96,8 +96,8 @@ def api_use_key(game: str, command: str, session_key: str) -> dict:
         return {"response": f"Error: {str(e)}"}
 
 
-@mcp.tool(name="api-get-words")
-def api_get_words(game: str) -> dict:
+@mcp.tool(name="get-words")
+def get_words(game: str) -> dict:
     """
         Get the list of all possible words from the given game.
         (Must be used only one time)
@@ -129,8 +129,8 @@ def api_get_words(game: str) -> dict:
         return {"response": f"Error: {str(e)}"}
 
 
-@mcp.tool(name="api-get-dict")
-def api_get_dict(game: str) -> dict:
+@mcp.tool(name="get-dict")
+def get_dict(game: str) -> dict:
     """
     Get the dictionary of words from the given game.
 
@@ -168,13 +168,13 @@ def api_get_dict(game: str) -> dict:
         return {"response": f"Error: {str(e)}"}
 
 
-@mcp.tool(name="api-get-chat-log")
-def api_get_chat_log(game: str, session_key: str) -> dict:
+@mcp.tool(name="get-chat-log")
+def get_chat_log(game: str, session_key: str) -> dict:
     """
     Get the chat log of the current game session using the session key.
 
     Arguments:
-        session_key (str): The session key obtained from "api-gen-key" or "api-use-key".
+        session_key (str): The session key obtained from "gen-key" or "use-key".
 
     Returns:
         dict: The chat log of the current game session.

@@ -23,14 +23,11 @@ class State(_CSVLoggedState, TypedDict):
     last_result_content: str | list[str | dict[Any, Any]]
     structured_response: AIModelResponse | None
 
-    debug: bool
     key: str
 
     game: str
 
     missing_tool_calls: bool
-
-    give_up: bool
 
 
 class PartialState(TypedDict):
@@ -50,11 +47,8 @@ class PartialState(TypedDict):
     last_result_content: NotRequired[str | list[str | dict[Any, Any]]]
     structured_response: NotRequired[AIModelResponse | None]
 
-    debug: NotRequired[bool]
     key: NotRequired[str]
 
     game: NotRequired[str]
 
     missing_tool_calls: NotRequired[bool]
-
-    give_up: NotRequired[bool]
