@@ -149,13 +149,16 @@ class MCPClient:
                     elif getattr(chunk, "content", None):
                         print(chunk.content, end="", flush=True)
                 ai_message_result += chunk
+
+
             logger.info("Done thinking")
 
             langchain_tool_calls: list[LangChainToolCall] = getattr(
                 ai_message_result, "tool_calls", []
             )
-            # logger.info(f"LLM Response Content: {ai_message_result.content}")
-            # logger.info(f"LLM Tool Calls: {langchain_tool_calls}")
+            
+            logger.debug(f"LLM Response Content: {ai_message_result.content}")
+            logger.debug(f"LLM Tool Calls: {langchain_tool_calls}")
 
             tool_calls = [
                 ToolCall(tool_name=call["name"], arguments=call["args"])
