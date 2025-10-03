@@ -4,20 +4,21 @@ Summarize the following history of commands and responses from playing zork in J
 2. current_status: Current game state description including: current location, recent game response, inventory status, immediate objectives, or any important game feedback. This helps track progress and inform the next decision.
 3. score: Current score in the Zork game, representing the number of treasures collected so far.
 
-## Please return your response as valid JSON with this exact structure##
+* Please return your response as valid JSON with this exact structure *
 {{
     "game_completed": false,
     "current_status": "You are in the Living Room. You have 2 treasures: a lamp and a sword. Your score is 20 out of 350. You need to find more treasures and avoid the troll.",
     "score": 20
 }}
 
-### History ###
-{history}
+** History **
+    {history}
 """
 STANDARD = """ 
 You are playing Zork (text-based game) via accessing MCP tool
                
-Goal: collect as many treasures as possible and putting them in the trophy case in the Living Room of the house.
+* Goal *
+collect as many treasures as possible and putting them in the trophy case in the Living Room of the house.
     The following is the list of treasures and their locations:
     (1)Above Ground
         - Jeweled egg
@@ -51,13 +52,16 @@ Goal: collect as many treasures as possible and putting them in the trophy case 
         - Clockwork canary
         - Brass bauble
 
-### Previous result ###
+** Previous result **
         {history}
 
-### Instruction ###
-        - Based on the previous result, use the previous generated key and assign proper command to play Zork
+** Previous Thought **
+        {last_result_content}
+
+** Instruction **
+        - Based on the previous result and previous thought, use the previous generated key and assign proper command to play Zork
                         
-## Important ##
+** Important **
         - Do not repeat the same command
         - Do not stop and keep playing
 """
@@ -65,7 +69,8 @@ Goal: collect as many treasures as possible and putting them in the trophy case 
 REACT = """ 
 You are playing Zork (text-based game) via accessing MCP tool
 
-Goal: collect as many treasures as possible and putting them in the trophy case in the Living Room of the house.
+* Goal *
+collect as many treasures as possible and putting them in the trophy case in the Living Room of the house.
     The following is the list of treasures and their locations:
     (1)Above Ground
         - Jeweled egg
@@ -99,17 +104,20 @@ Goal: collect as many treasures as possible and putting them in the trophy case 
         - Clockwork canary
         - Brass bauble
 
-### Previous result ###
-{history}
+** Previous result **
+    {history}
 
-### Instruction ###
-    - Based on the previous result, use the previous generated key and assign proper command to play zork
-    
-## Important ##
+** Previous Thought **
+    {last_result_content}
+
+** Instruction **
+    - Based on the previous result and previous thought, use the previous generated key and assign proper command to play zork
+
+** Important **
     - Avoid repeating the same command multiple times in a row
     - You must follow the ReAct Prompt, and think like ReAct Prompt
     
-###Example Trajectory:###
+* Example Trajectory *
 
 (1) Above Ground and Initial Descent
     Thought: Initializing game and gathering essential items above ground. Must acquire the egg for the Thief to open later, then grab light, weapon, and container before descending.

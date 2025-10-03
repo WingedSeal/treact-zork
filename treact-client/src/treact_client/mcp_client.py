@@ -1,3 +1,6 @@
+import requests
+from .csv_logger import CSVLogger
+from requests.exceptions import Timeout, ConnectionError, HTTPError
 from .ai_model_response import AIModelResponse
 from .ai_mode import AIMode
 from .tool_call import ToolCall, ToolCallResult, ToolServerResponse
@@ -7,12 +10,11 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_mcp_adapters.tools import load_mcp_tools, BaseTool
 import pprint
 import os
-from typing import Optional, Any
+from typing import cast, Literal, Hashable
 from contextlib import AsyncExitStack
 from mcp.client.streamable_http import streamablehttp_client
-from langchain_core.messages import SystemMessage, AIMessageChunk, AIMessage
+from langchain_core.messages import SystemMessage, AIMessageChunk, BaseMessageChunk
 from langchain_ollama import ChatOllama
-from typing import Any
 import orjson
 from langchain_core.prompts import ChatPromptTemplate
 from langgraph.graph.state import StateGraph, START, END, CompiledStateGraph
@@ -22,12 +24,11 @@ from tqdm import tqdm
 from mcp.types import TextContent
 import time
 from treact_client.load_env import env
-from pathlib import Path
-from .state import State
+from .state import State, PartialState
 from . import prompt_template
-from .logger import setup_logger, LOG_DIRECTORY
+from .log import get_logger
 
-logger = setup_logger()
+logger = get_logger(__name__)
 
 
 SAVE_HISTORY = 10
@@ -46,6 +47,13 @@ else:
     # model = ChatOllama(model="gpt-oss:20b", temperature=0)
     # model = ChatOllama(model="llama3.1:latest", temperature=0)
 
+MCP_SERVER_URL = f"http://{env.SERVER_IP}:{env.SERVER_PORT}/mcp"
+
+
+SHOULD_CONTINUE_TYPE = Literal[
+    "END", "ACTION", "MISSING_CALL", "HALLUCINATE_COUNTER_MEASURE"
+]
+
 
 class MCPClient:
     def __init__(self) -> None:
@@ -54,10 +62,17 @@ class MCPClient:
         self.tools: list[BaseTool] = []
         self.agent: CompiledStateGraph | None = None
 
+    def is_server_up(self) -> bool:
+        try:
+            response = requests.get(MCP_SERVER_URL, timeout=3)
+        except (ConnectionError, Timeout, HTTPError):
+            return False
+        return response.status_code % 100 != 5
+
     async def _get_session(self) -> ClientSession:
         read_stream, write_stream, session_ID = (
             await self.exit_stack.enter_async_context(
-                streamablehttp_client(f"http://{env.SERVER_IP}:{env.SERVER_PORT}/mcp")
+                streamablehttp_client(MCP_SERVER_URL)
             )
         )
         print(f"Streams acquired: {read_stream=}, {write_stream=}")
@@ -66,15 +81,21 @@ class MCPClient:
         )
 
     async def connect_to_server(self) -> None:
+        if not self.is_server_up():
+            raise Exception(f"MCP server at {MCP_SERVER_URL} is down.")
         self.session = await self._get_session()
         await self.session.initialize()
         self.tools = await load_mcp_tools(self.session)
         pprint.pp(self.tools)
+        logger.info(
+            f"Connected to server with tools: {[tool.name for tool in self.tools]}"
+        )
         print("Connected to server with tools:", [tool.name for tool in self.tools])
         self.agent = self._get_graph().compile()
 
     def _get_graph(self) -> StateGraph:
-        async def llm_call(state: State):
+        async def llm_call(state: State) -> PartialState:
+            logger.info(f"Step {state['current_step']} LLM Call")
             if state["current_step"] == 0:
                 return {
                     "tool_calls": [
@@ -102,7 +123,7 @@ class MCPClient:
 
             chain = prompt | llm_with_tools
 
-            ai_message_result = AIMessageChunk(content="")
+            ai_message_result: BaseMessageChunk = AIMessageChunk(content="")
             print("-- THINKING TIME --\n")
             if env.API_KEY:
                 time.sleep(5)  # Prevent Gemini from exploding
@@ -110,8 +131,7 @@ class MCPClient:
             async for chunk in chain.astream(
                 {
                     "history": state["history"],
-                    "current_step": state["current_step"],
-                    "maximum_step": state["maximum_step"],
+                    "last_result_content": state["last_result_content"],
                 }
             ):
                 ai_tool_calls = getattr(chunk, "tool_calls", None)
@@ -126,10 +146,17 @@ class MCPClient:
                 print(f"Step = {state['current_step']}")
                 print("\nFull LLM Response:")
                 print(f"Content: {ai_message_result.content}")
+                logger.info(f"LLM Response Content: {ai_message_result.content}")
                 print(
                     f"Response Metadata: {getattr(ai_message_result, 'response_metadata', {})}"
                 )
+                logger.info(
+                    f"LLM Response Metadata: {getattr(ai_message_result, 'response_metadata', {})}"
+                )
                 print(f"Tool Calls: {getattr(ai_message_result, 'tool_calls', [])}")
+                logger.info(
+                    f"LLM Tool Calls: {getattr(ai_message_result, 'tool_calls', [])}"
+                )
                 print(f"type: {type(ai_message_result)}")
 
             tool_calls = [
@@ -138,50 +165,29 @@ class MCPClient:
             ]
             print(tool_calls)
             last_result_content = ai_message_result.content
+            print(repr(last_result_content))
             return {
                 "tool_calls": tool_calls,
                 "last_result_content": last_result_content,
                 "current_step": state["current_step"] + 1,
             }
 
-        def hallucinate_counter_measure(state: State):
+        def hallucinate_counter_measure(state: State) -> PartialState:
             print("LLM seems to not be able to call tool. Deploying counter measure.")
-            command = ""
-            for line in state["last_result_content"].splitlines():
-                if "**Action**:" not in line:
-                    continue
-                command = line.split("**Action**:", 1)[1].strip()
-                print(f"Command detected in action: {command}")
-                break
-            else:
-                print(
-                    "It seems there is neither action nor tool calls. There is nothing we can do. Giving up."
-                )
-                return {"give_up": True}
+            logger.info(
+                "LLM seems to not be able to call tool. Deploying counter measure."
+            )
+            return {"give_up": True}
 
-            return {
-                "tool_calls": [
-                    ToolCall(
-                        tool_name="api-use-key",
-                        arguments={
-                            "game": state["game"],
-                            "command": command,
-                            "session_key": state["key"],
-                        },
-                    )
-                ],
-                "hallucinate_count": 0,
-                "hallucinate_streak": state["hallucinate_streak"] + 1,
-            }
-
-        def missing_tool_calls(state: State):
+        def missing_tool_calls(state: State) -> PartialState:
             print("LLM is hallucinating and refuse to call tools.")
+            logger.info("LLM is hallucinating and refuse to call tools.")
             return {
                 "missing_tool_calls": True,
                 "hallucinate_count": state["hallucinate_count"] + 1,
             }
 
-        def should_continue(state: State):
+        def should_continue(state: State) -> SHOULD_CONTINUE_TYPE:
             if state["give_up"]:
                 if state["debug"]:
                     pprint.pp("Giving up from Hallucination")
@@ -195,11 +201,12 @@ class MCPClient:
             elif state["tool_calls"]:
                 if state["debug"]:
                     pprint.pp("Action")
-                return "Action"
+                return "ACTION"
             else:
                 return "MISSING_CALL"
 
         async def call_tools(state: State):
+            logger.info(f"Step {state['current_step']} Calling Tools")
             assert self.session is not None
             tool_call_results: list[ToolCallResult] = []
             key = ""
@@ -220,6 +227,7 @@ class MCPClient:
 
                 if state["debug"]:
                     pprint.pp(result)
+                    logger.info(f"Tool {tool.tool_name} returned {result}")
                 content = result.content[0]
                 if not isinstance(content, TextContent):
                     raise Exception(
@@ -246,6 +254,7 @@ class MCPClient:
 
         async def summarize(state: State):
             print("Summarizing")
+            logger.info(f"Step {state['current_step']} Summarizing")
             assert self.session is not None
             try:
                 await self.session.call_tool(
@@ -281,15 +290,15 @@ class MCPClient:
         graph.add_node("missing_tool_calls", missing_tool_calls)
         graph.add_node("hallucinate_counter_measure", hallucinate_counter_measure)
         graph.add_edge(START, "llm_call")
+        path_map: dict[SHOULD_CONTINUE_TYPE, str] = {
+            "ACTION": "environment",
+            "END": "summarize",
+            "MISSING_CALL": "missing_tool_calls",
+            "HALLUCINATE_COUNTER_MEASURE": "hallucinate_counter_measure",
+        }
+
         graph.add_conditional_edges(
-            "llm_call",
-            should_continue,
-            {
-                "Action": "environment",
-                "END": "summarize",
-                "MISSING_CALL": "missing_tool_calls",
-                "HALLUCINATE_COUNTER_MEASURE": "hallucinate_counter_measure",
-            },
+            "llm_call", should_continue, cast(dict[Hashable, str], path_map)
         )
         graph.add_edge("missing_tool_calls", "llm_call")
         graph.add_edge("hallucinate_counter_measure", "environment")
@@ -300,11 +309,11 @@ class MCPClient:
     async def talk_with_zork(
         self,
         model: BaseChatModel,
-        category: AIMode,
+        ai_mode: AIMode,
         debug: bool,
-    ):
+    ) -> State:
         assert self.agent is not None
-        match category:
+        match ai_mode:
             case AIMode.STANDARD:
                 agent_response = await self.agent.ainvoke(
                     State(
@@ -324,7 +333,6 @@ class MCPClient:
                             "missing_tool_calls": False,
                             "hallucinate_count": 0,
                             "hallucinate_count_threshold": 3,
-                            "hallucinate_streak": 0,
                             "give_up": False,
                         }
                     ),
@@ -352,7 +360,6 @@ class MCPClient:
                             "missing_tool_calls": False,
                             "hallucinate_count": 0,
                             "hallucinate_count_threshold": 3,
-                            "hallucinate_streak": 0,
                             "give_up": False,
                         }
                     ),
@@ -364,72 +371,22 @@ class MCPClient:
             case _:
                 raise Exception("Please assign the type of prompting")
 
-        return agent_response
+        return cast(State, agent_response)
 
     async def cleanup(self) -> None:
         """Clean up resources"""
         await self.exit_stack.aclose()
 
 
-# Global client instance
-client: MCPClient = MCPClient()
-
-
-async def run_client():
+async def run_client(ai_mode: AIMode) -> None:
+    client = MCPClient()
     await client.connect_to_server()
-    current = datetime.datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
-    fields = [
-        "game_completed",
-        "current_status",
-        "score",
-        "current_step",
-        "maximum_step",
-        "hallucinate_count",
-        "hallucinate_count_threshold",
-        "hallucinate_streak",
-    ]
-    category = AIMode.STANDARD
-    with open(
-        f"{LOG_DIRECTORY}/{category}_{model.model.replace('/','-').replace(':', '-')}_{current}.csv",
-        "w",
-        newline="",
-    ) as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=fields)
-        writer.writeheader()
-    print(f"Model: {model.model}")
-    try:
-
-        debug = True
-        for i in tqdm(iterable=range(5)):
-            result = await client.talk_with_zork(
-                model=model, category=category, debug=debug
-            )
-            pprint.pp(f"Iteration {i+1} completed.")
-
-            # final_result = result["structured_response"]
-            final_result = result["structured_response"].model_dump()
-            # for key, value in final_result.items():
-            #     print(f"{key} : {value}")
-
-            # print(f"current_step : {result['current_step']}")
-            # print(f"maximum_step : {result['maximum_step']}")
-            final_result["current_step"] = result["current_step"]
-            final_result["maximum_step"] = result["maximum_step"]
-            final_result["hallucinate_count"] = result["hallucinate_count"]
-            final_result["hallucinate_count_threshold"] = result[
-                "hallucinate_count_threshold"
-            ]
-            final_result["hallucinate_streak"] = result["hallucinate_streak"]
-
-            test = [final_result]
-            with open(
-                f"{LOG_DIRECTORY}/result_{model.model.replace('/','-').replace(':', '-')}_{current}.csv",
-                "a",
-                newline="",
-            ) as csvfile:
-                writer = csv.DictWriter(csvfile, fieldnames=fields)
-                writer.writerows(test)
-    except Exception as e:
-        print(f"Error: {str(e)}")
+    csv = CSVLogger(model, ai_mode)
+    for i in tqdm(iterable=range(5)):
+        result_state = cast(
+            State,
+            await client.talk_with_zork(model=model, ai_mode=ai_mode, debug=True),
+        )
+        csv.add_result_state(result_state)
 
     await client.cleanup()
