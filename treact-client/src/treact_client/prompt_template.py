@@ -12,7 +12,7 @@ Summarize the following history of commands and responses from playing zork in J
 }}
 
 ** History **
-    {history}
+    {tool_call_result_history}
 """
 
 STANDARD = """ 
@@ -54,10 +54,10 @@ collect as many treasures as possible and putting them in the trophy case in the
         - Brass bauble
 
 ** Previous result **
-        {history}
+        {tool_call_result_history}
 
 ** Previous Thought **
-        {last_result_content}
+        {last_ai_message_result_content}
 
 ** Instruction **
         - Based on the previous result and previous thought, use the previous generated key and assign proper command to play Zork
@@ -106,10 +106,10 @@ collect as many treasures as possible and putting them in the trophy case in the
         - Brass bauble
 
 ** Previous result **
-    {history}
+    {tool_call_result_history}
 
 ** Previous Thought **
-    {last_result_content}
+    {last_ai_message_result_content}
 
 ** Instruction **
     - Based on the previous result and previous thought, use the previous generated key and assign proper command to play zork

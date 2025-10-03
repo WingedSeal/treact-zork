@@ -7,8 +7,7 @@ from typing import Hashable, Literal, cast
 import orjson
 import requests
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import (AIMessageChunk, BaseMessageChunk,
-                                     SystemMessage)
+from langchain_core.messages import AIMessageChunk, BaseMessageChunk, SystemMessage
 from langchain_core.messages import ToolCall as LangChainToolCall
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -37,7 +36,7 @@ if env.API_KEY:
     os.environ["GOOGLE_API_KEY"] = env.API_KEY
     model = ChatGoogleGenerativeAI(
         model="gemini-2.5-flash",
-        temperature=0.5,
+        temperature=0.6,
         # max_output_tokens=8000,
         include_thoughts=True,
         thinking_budget=1024,
@@ -103,7 +102,7 @@ class MCPClient:
                     "tool_calls": [
                         ToolCall(
                             tool_name="gen-key",
-                            arguments={"game_name": state["model_settings"].game_name},
+                            arguments={"game": state["model_settings"].game_name},
                         )
                     ],
                     "last_ai_message_result_content": "",
@@ -346,7 +345,7 @@ class MCPClient:
         await self.exit_stack.aclose()
 
 
-async def run_client(ai_mode: AIMode, iterations: int = 3) -> None:
+async def run_client(ai_mode: AIMode, iterations: int = 5) -> None:
     logging.info(f"Running MCP-Client as {ai_mode.value} mode")
     client = MCPClient()
     await client.connect_to_server()
