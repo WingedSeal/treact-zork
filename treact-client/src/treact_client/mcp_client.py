@@ -32,8 +32,6 @@ from .tool_call import ToolCall, ToolCallResult, ToolServerResponse
 logger = get_logger(__name__)
 
 
-SAVE_HISTORY = 10
-
 if env.API_KEY:
     os.environ["GOOGLE_API_KEY"] = env.API_KEY
     model = ChatGoogleGenerativeAI(
@@ -51,8 +49,11 @@ else:
 MCP_SERVER_URL = f"http://{env.SERVER_IP}:{env.SERVER_PORT}/mcp"
 
 
-SHOULD_CONTINUE_TYPE = Literal[
-    "END", "ACTION", "MISSING_CALL", "HALLUCINATE_COUNTER_MEASURE"
+ACTIONS_AFTER_LLM_CALL = Literal[
+    "END_AND_SUMMARIZE",
+    "CALL_TOOLS",
+    "HANDLE_MISSING_TOOL_CALL",
+    "missing_tool_call_countER_MEASURE",
 ]
 
 
@@ -92,25 +93,28 @@ class MCPClient:
         self.agent = self._get_graph().compile()
 
     def _get_graph(self) -> StateGraph:
-        async def llm_call(state: State) -> PartialState:
-            logger.info(f"Executing {llm_call.__name__}: {state['current_step']}")
+        async def call_llm(state: State) -> PartialState:
+            logger.info(f"Executing {call_llm.__name__}: {state['current_step']}")
             if state["current_step"] == 0:
                 logger.debug("Bypassing LLM. Calling 'gen-key'.")
                 return {
                     "tool_calls": [
-                        ToolCall(tool_name="gen-key", arguments={"game": state["game"]})
+                        ToolCall(
+                            tool_name="gen-key",
+                            arguments={"game_name": state["game_name"]},
+                        )
                     ],
-                    "last_result_content": "",
+                    "last_ai_message_result_content": "",
                     "current_step": state["current_step"] + 1,
                 }
 
             llm = state["llm"]
             llm_with_tools = llm.bind_tools(self.tools)
 
-            template = state["template"]
+            template = state["prompt_template"]
             prompt = ChatPromptTemplate.from_template(template)
 
-            if state["missing_tool_calls"]:
+            if state["is_missing_tool_call"]:
                 logger.warning("Missing tool call. Reprompting")
                 prompt.append(
                     SystemMessage(
@@ -129,8 +133,10 @@ class MCPClient:
             logger.debug("Thoughts:")
             async for chunk in chain.astream(
                 {
-                    "history": state["history"],
-                    "last_result_content": state["last_result_content"],
+                    "tool_call_result_history": state["tool_call_result_history"],
+                    "last_ai_message_result_content": state[
+                        "last_ai_message_result_content"
+                    ],
                 }
             ):
                 ai_tool_calls: list[LangChainToolCall] | None = getattr(
@@ -156,32 +162,32 @@ class MCPClient:
             ]
 
             return {
-                "missing_tool_calls": False,
+                "is_missing_tool_call": False,
                 "tool_calls": tool_calls,
-                "last_result_content": ai_message_result.content,
+                "last_ai_message_result_content": ai_message_result.content,
                 "current_step": state["current_step"] + 1,
             }
 
-        def missing_tool_calls(state: State) -> PartialState:
+        def handle_missing_tool_call(state: State) -> PartialState:
             logger.warning("LLM did not call any tool.")
             return {
-                "missing_tool_calls": True,
-                "hallucinate_count": state["hallucinate_count"] + 1,
+                "is_missing_tool_call": True,
+                "missing_tool_call_count": state["missing_tool_call_count"] + 1,
             }
 
-        def should_continue(state: State) -> SHOULD_CONTINUE_TYPE:
-            if state["hallucinate_count"] > state["hallucinate_count_threshold"]:
+        def should_continue(state: State) -> ACTIONS_AFTER_LLM_CALL:
+            if state["missing_tool_call_count"] > state["missing_tool_call_threshold"]:
                 logger.warning("Reaching hallucination threshold. Ending the game.")
-                return "END"
+                return "END_AND_SUMMARIZE"
             elif state["current_step"] > state["maximum_step"]:
                 logger.info(
                     f"Reaching maximum step ({state['maximum_step']}). Ending the game."
                 )
-                return "END"
+                return "END_AND_SUMMARIZE"
             elif state["tool_calls"]:
-                return "ACTION"
+                return "CALL_TOOLS"
             else:
-                return "MISSING_CALL"
+                return "HANDLE_MISSING_TOOL_CALL"
 
         async def call_tools(state: State) -> PartialState:
             logger.info(f"Executing {call_tools.__name__}: {state['current_step']}")
@@ -212,7 +218,7 @@ class MCPClient:
                     )
                 server_response: ToolServerResponse = orjson.loads(content.text)
                 logger.info(f"Tool Server Response: {server_response}.")
-                key = server_response.get("new_key", state["key"])
+                key = server_response.get("new_key", state["zork_session_key"])
                 if tool.tool_name == "get-chat-log":
                     continue
                 tool_call_results.append(
@@ -223,24 +229,30 @@ class MCPClient:
                     )
                 )
 
-            tool_call_results = state["history"] + tool_call_results
+            tool_call_results = state["tool_call_result_history"] + tool_call_results
             if len(tool_call_results) > state["history_max_length"]:
                 tool_call_results = tool_call_results[-state["history_max_length"] :]
-            return {"history": tool_call_results, "key": key}
+            return {
+                "tool_call_result_history": tool_call_results,
+                "zork_session_key": key,
+            }
 
-        async def summarize(state: State) -> PartialState:
+        async def end_and_summarize(state: State) -> PartialState:
             logger.info(f"Executing {call_tools.__name__}: {state['current_step']}")
             assert self.session is not None
             logger.debug(f"Calling get-chat-log.")
             try:
                 await self.session.call_tool(
                     name="get-chat-log",
-                    arguments={"game": state["game"], "session_key": state["key"]},
+                    arguments={
+                        "game_name": state["game_name"],
+                        "session_key": state["zork_session_key"],
+                    },
                 )
             except Exception as e:
                 logger.error(e)
                 return {
-                    "structured_response": AIModelResponse(
+                    "ai_model_response": AIModelResponse(
                         game_completed=False, current_status=str(e), score=0
                     ),
                     "current_step": state["current_step"] - 1,
@@ -252,33 +264,36 @@ class MCPClient:
 
             prompt = ChatPromptTemplate.from_template(template)
             chain = prompt | structured_llm
-            structured_response: AIModelResponse = cast(
-                AIModelResponse, await chain.ainvoke({"history": state["history"]})
+            ai_model_response: AIModelResponse = cast(
+                AIModelResponse,
+                await chain.ainvoke(
+                    {"tool_call_result_history": state["tool_call_result_history"]}
+                ),
             )
-            logger.info(f"Structured Response: {structured_response}")
+            logger.info(f"Structured Response: {ai_model_response}")
             return {
-                "structured_response": structured_response,
+                "ai_model_response": ai_model_response,
                 "current_step": state["current_step"] - 1,
             }
 
         graph = StateGraph(State)
-        graph.add_node("llm_call", llm_call)
-        graph.add_node("environment", call_tools)
-        graph.add_node("summarize", summarize)
-        graph.add_node("missing_tool_calls", missing_tool_calls)
-        graph.add_edge(START, "llm_call")
-        path_map: dict[SHOULD_CONTINUE_TYPE, str] = {
-            "ACTION": "environment",
-            "END": "summarize",
-            "MISSING_CALL": "missing_tool_calls",
-        }
+        graph.add_node("call_llm", call_llm)
+        graph.add_node("call_tools", call_tools)
+        graph.add_node("end_and_summarize", end_and_summarize)
+        graph.add_node("handle_missing_tool_call", handle_missing_tool_call)
 
+        graph.add_edge(START, "call_llm")
+        path_map: dict[ACTIONS_AFTER_LLM_CALL, str] = {
+            "CALL_TOOLS": "call_tools",
+            "END_AND_SUMMARIZE": "end_and_summarize",
+            "HANDLE_MISSING_TOOL_CALL": "handle_missing_tool_call",
+        }
         graph.add_conditional_edges(
-            "llm_call", should_continue, cast(dict[Hashable, str], path_map)
+            "call_llm", should_continue, cast(dict[Hashable, str], path_map)
         )
-        graph.add_edge("missing_tool_calls", "llm_call")
-        graph.add_edge("environment", "llm_call")
-        graph.add_edge("summarize", END)
+        graph.add_edge("handle_missing_tool_call", "call_llm")
+        graph.add_edge("call_tools", "call_llm")
+        graph.add_edge("end_and_summarize", END)
         return graph
 
     async def talk_with_zork(
@@ -293,19 +308,19 @@ class MCPClient:
                     State(
                         {
                             "llm": model,
-                            "template": prompt_template.STANDARD,
-                            "history": [],
+                            "prompt_template": prompt_template.STANDARD,
+                            "tool_call_result_history": [],
                             "history_max_length": 10,
                             "tool_calls": [],
-                            "last_result_content": "",
-                            "structured_response": None,
+                            "last_ai_message_result_content": "",
+                            "ai_model_response": None,
                             "current_step": 0,
                             "maximum_step": 200,
-                            "key": "",
-                            "game": "zork1",
-                            "missing_tool_calls": False,
-                            "hallucinate_count": 0,
-                            "hallucinate_count_threshold": 5,
+                            "zork_session_key": "",
+                            "game_name": "zork1",
+                            "is_missing_tool_call": False,
+                            "missing_tool_call_count": 0,
+                            "missing_tool_call_threshold": 5,
                         }
                     ),
                     config={"recursion_limit": 1200},
@@ -317,19 +332,19 @@ class MCPClient:
                     State(
                         {
                             "llm": model,
-                            "template": prompt_template.REACT,
-                            "history": [],
+                            "prompt_template": prompt_template.REACT,
+                            "tool_call_result_history": [],
                             "history_max_length": 40,
                             "tool_calls": [],
-                            "last_result_content": "",
-                            "structured_response": None,
+                            "last_ai_message_result_content": "",
+                            "ai_model_response": None,
                             "current_step": 0,
                             "maximum_step": 200,
-                            "key": "",
-                            "game": "zork1",
-                            "missing_tool_calls": False,
-                            "hallucinate_count": 0,
-                            "hallucinate_count_threshold": 3,
+                            "zork_session_key": "",
+                            "game_name": "zork1",
+                            "is_missing_tool_call": False,
+                            "missing_tool_call_count": 0,
+                            "missing_tool_call_threshold": 3,
                         }
                     ),
                     config={"recursion_limit": 1200},
