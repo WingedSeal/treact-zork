@@ -37,7 +37,7 @@ if env.API_KEY:
     os.environ["GOOGLE_API_KEY"] = env.API_KEY
     model = ChatGoogleGenerativeAI(
         model="gemini-2.5-flash",
-        temperature=0,
+        temperature=0.5,
         # max_output_tokens=8000,
         include_thoughts=True,
         thinking_budget=1024,
@@ -99,9 +99,7 @@ class MCPClient:
                 logger.info("First step, generating API key")
                 return {
                     "tool_calls": [
-                        ToolCall(
-                            tool_name="gen-key", arguments={"game": state["game"]}
-                        )
+                        ToolCall(tool_name="gen-key", arguments={"game": state["game"]})
                     ],
                     "last_result_content": "",
                     "current_step": state["current_step"] + 1,
@@ -255,9 +253,7 @@ class MCPClient:
 
             prompt = ChatPromptTemplate.from_template(template)
             chain = prompt | structured_llm
-            result = await chain.ainvoke(
-                {"history": state["history"][-SAVE_HISTORY:-1]}
-            )
+            result = await chain.ainvoke({"history": state["history"]})
             logger.info(f"Structured Response: {result}")
             return {
                 "structured_response": result,
@@ -303,7 +299,7 @@ class MCPClient:
                             "last_result_content": "",
                             "structured_response": None,
                             "current_step": 0,
-                            "maximum_step": 400,
+                            "maximum_step": 200,
                             "key": "",
                             "game": "zork1",
                             "missing_tool_calls": False,
