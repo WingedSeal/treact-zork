@@ -7,7 +7,8 @@ from typing import Hashable, Literal, cast
 import orjson
 import requests
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import AIMessageChunk, BaseMessageChunk, SystemMessage
+from langchain_core.messages import (AIMessageChunk, BaseMessageChunk,
+                                     SystemMessage)
 from langchain_core.messages import ToolCall as LangChainToolCall
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI

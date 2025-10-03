@@ -1,11 +1,11 @@
 from dataclasses import dataclass
-from typing import TypedDict, NotRequired, Any
+from typing import Any, NotRequired, TypedDict
+
 from langchain_core.language_models import BaseChatModel
 
+from .ai_model_response import AIModelResponse
 from .log import get_logger
 from .tool_call import ToolCall, ToolCallResult
-from .ai_model_response import AIModelResponse
-
 
 logger = get_logger(__name__)
 

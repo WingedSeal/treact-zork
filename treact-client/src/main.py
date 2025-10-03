@@ -1,5 +1,6 @@
 import asyncio
-from treact_client import run_client, AIMode
+
+from treact_client import AIMode, run_client
 
 
 def react_client() -> None:
