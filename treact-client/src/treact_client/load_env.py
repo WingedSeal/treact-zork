@@ -1,8 +1,6 @@
 import os
-from dotenv import load_dotenv
 from pydantic import BaseModel, Field
-
-load_dotenv(".env")
+from .log import get_logger
 
 
 class Environment(BaseModel):
@@ -20,3 +18,6 @@ env = Environment(
     CLIENT_PORT=int(os.getenv("CLIENT_PORT") or 0),
     API_KEY=os.getenv("API_KEY") or "",
 )
+
+logger = get_logger(__name__)
+logger.debug(f"Environment loaded: {env}")

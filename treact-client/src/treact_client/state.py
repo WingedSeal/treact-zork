@@ -1,8 +1,13 @@
 from dataclasses import dataclass
 from typing import TypedDict, NotRequired, Any
 from langchain_core.language_models import BaseChatModel
+
+from .log import get_logger
 from .tool_call import ToolCall, ToolCallResult
 from .ai_model_response import AIModelResponse
+
+
+logger = get_logger(__name__)
 
 
 @dataclass(kw_only=True, frozen=True)
@@ -15,6 +20,7 @@ class ModelSettings:
     history_max_length: int
 
     def to_new_state(self) -> "State":
+        logger.debug(f"Generating new state from model settings: {self}")
         return State(
             {
                 "model_settings": self,

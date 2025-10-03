@@ -14,6 +14,7 @@ Summarize the following history of commands and responses from playing zork in J
 ** History **
     {history}
 """
+
 STANDARD = """ 
 You are playing Zork (text-based game) via accessing MCP tool
                

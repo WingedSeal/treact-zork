@@ -1,10 +1,12 @@
 from .ai_mode import AIMode
 import csv
 from typing import TypedDict, cast
-from .log import LOG_DIRECTORY, get_current_time_string
+from .log import LOG_DIRECTORY, get_current_time_string, get_logger
 from .ai_model_response import AIModelResponse
 from .state import State, _CSVLoggedState
 from langchain_core.language_models import BaseChatModel
+
+logger = get_logger(__name__)
 
 
 class _AIModelResponseTypes:
@@ -29,10 +31,12 @@ class CSVLogger:
         with self.csv_file.open("w", newline="") as file:
             writer = csv.DictWriter(file, fieldnames=CSVFields.__annotations__.keys())
             writer.writeheader()
+        logger.debug(f"Initialized CSVLogger at {self.csv_file.resolve().as_posix()}")
 
     def add_result_state(self, result_state: State) -> None:
-        structured_response = result_state["structured_response"]
-        assert structured_response is not None
+        logger.debug(f"Adding result state")
+        ai_model_response = result_state["ai_model_response"]
+        assert ai_model_response is not None
         csv_row = cast(
             CSVFields,
             {
@@ -40,7 +44,7 @@ class CSVLogger:
                     key: result_state[key]
                     for key in _CSVLoggedState.__annotations__.keys()
                 },
-                **structured_response.model_dump(),
+                **ai_model_response.model_dump(),
             },
         )
         with self.csv_file.open("a", newline="") as file:
