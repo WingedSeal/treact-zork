@@ -26,8 +26,8 @@ LOG_LEVELS = {
     "ERROR": logging.ERROR,
     "CRITICAL": logging.CRITICAL,
 }
-console_log_level = os.getenv("LOG_LEVEL", "INFO").upper()
-file_log_level = os.getenv("FILE_LOG_LEVEL", "DEBUG").upper()
+console_log_level = os.getenv("LOG_LEVEL", "INFO").upper().strip()
+file_log_level = os.getenv("FILE_LOG_LEVEL", "DEBUG").upper().strip()
 log_level = LOG_LEVELS.get(console_log_level, logging.INFO)
 
 VALID_FILE_LOG_LEVELS = ("NONE", "DEBUG", "INFO")
