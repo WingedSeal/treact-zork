@@ -9,16 +9,13 @@ venv/
 
 frotz.exe
 *.z5
+*.z3
 
-*.env
+.env
 
 access_key.json
 .python-version
 
-*/logs/*
-
-logs*
-
-test_result/*
+logs/
 
 games/*

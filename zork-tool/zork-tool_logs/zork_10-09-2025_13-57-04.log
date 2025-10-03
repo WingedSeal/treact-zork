@@ -1,0 +1,26 @@
+INFO:__main__:Gen Key
+INFO:__main__:Generated key: fcf4 for game: zork285 with seed 327323
+INFO:__main__:Use Key
+INFO:__main__:Using key: fcf4 for game: zork285
+INFO:__main__:New Key: 3a8a and Seed: 327323
+INFO:__main__:History for new key: ['look']
+INFO:__main__:Use Key
+INFO:__main__:Using key: 3a8a for game: zork285
+INFO:__main__:New Key: 6ebf and Seed: 327323
+INFO:__main__:History for new key: ['look', 'west']
+INFO:__main__:Use Key
+INFO:__main__:Using key: 6ebf for game: zork285
+INFO:__main__:New Key: 787f and Seed: 327323
+INFO:__main__:History for new key: ['look', 'west', 'north']
+INFO:__main__:Chat Log requested: 6ebf
+
+Welcome to adventure.
+You are in an open field west of a big white house, with a closed, locked
+front door.
+ > look
+You are in an open field west of a big white house, with a closed, locked
+front door.
+ > west
+You are in a forest, with trees in all directions around you.
+INFO:__main__:Gen Key
+INFO:__main__:Generated key: 349e for game: zork1 with seed 284379
