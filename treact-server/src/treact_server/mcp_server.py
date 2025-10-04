@@ -39,7 +39,7 @@ mcp = FastMCP(
 
 
 @mcp.tool(name="gen-key")
-def gen_key(game: str) -> dict:
+def gen_key(game_name: str) -> dict:
     """
     Generate a new Session with a new key to access for the given game. Use this tool one time.
 
@@ -51,20 +51,22 @@ def gen_key(game: str) -> dict:
     """
 
     try:
-        result = httpx.get(url=f"http://localhost:8000/gen_key/{game}", timeout=300)
+        result = httpx.get(
+            url=f"http://localhost:8000/gen_key/{game_name}", timeout=300
+        )
         if result.status_code == 200:
             pprint.pp(result.json())
             logger.info(result.json())
             return result.json()
         else:
-            raise Exception(f"Cannot call api for {game}")
+            raise Exception(f"Cannot call api for {game_name}")
     except httpx.HTTPError as e:
         pprint.pp(e)
         return {"key": "Error", "response": str(e)}
 
 
 @mcp.tool(name="use-key")
-def use_key(game: str, command: str, session_key: str) -> dict:
+def use_key(game_name: str, command: str, session_key: str) -> dict:
     """
     Using the session key obtained from "gen-key", send new command to the game.
     However, the key can only be used once. But using it generates a new key that can be used.
@@ -81,7 +83,7 @@ def use_key(game: str, command: str, session_key: str) -> dict:
         logger.info({"Input command": command, "session_key": session_key})
         pprint.pp({"Input command": command, "session_key": session_key})
         result = httpx.post(
-            url=f"http://localhost:8000/use_key/{game}",
+            url=f"http://localhost:8000/use_key/{game_name}",
             json={"command": command, "key": session_key},
             timeout=300,
         )
@@ -90,14 +92,14 @@ def use_key(game: str, command: str, session_key: str) -> dict:
             logger.info(result.json())
             return result.json()
         else:
-            raise Exception(f"Cannot call api for {game}")
+            raise Exception(f"Cannot call api for {game_name}")
     except httpx.HTTPError as e:
         pprint.pp(e)
         return {"response": f"Error: {str(e)}"}
 
 
 @mcp.tool(name="get-words")
-def get_words(game: str) -> dict:
+def get_words(game_name: str) -> dict:
     """
         Get the list of all possible words from the given game.
         (Must be used only one time)
@@ -114,7 +116,7 @@ def get_words(game: str) -> dict:
 
     try:
         result = httpx.get(
-            url=f"http://localhost:8000/dict/{game}",
+            url=f"http://localhost:8000/dict/{game_name}",
             timeout=300,
         )
         if result.status_code == 200:
@@ -123,14 +125,14 @@ def get_words(game: str) -> dict:
 
             return result.json()
         else:
-            raise Exception(f"Cannot call api for {game}")
+            raise Exception(f"Cannot call api for {game_name}")
     except httpx.HTTPError as e:
         pprint.pp(e)
         return {"response": f"Error: {str(e)}"}
 
 
 @mcp.tool(name="get-dict")
-def get_dict(game: str) -> dict:
+def get_dict(game_name: str) -> dict:
     """
     Get the dictionary of words from the given game.
 
@@ -154,7 +156,7 @@ def get_dict(game: str) -> dict:
 
     try:
         result = httpx.get(
-            url=f"http://localhost:8000/dict_with_types/{game}",
+            url=f"http://localhost:8000/dict_with_types/{game_name}",
             timeout=300,
         )
         if result.status_code == 200:
@@ -162,14 +164,14 @@ def get_dict(game: str) -> dict:
             logger.info(result.json())
             return result.json()
         else:
-            raise Exception(f"Cannot call api for {game}")
+            raise Exception(f"Cannot call api for {game_name}")
     except httpx.HTTPError as e:
         pprint.pp(e)
         return {"response": f"Error: {str(e)}"}
 
 
 @mcp.tool(name="get-chat-log")
-def get_chat_log(game: str, session_key: str) -> dict:
+def get_chat_log(game_name: str, session_key: str) -> dict:
     """
     Get the chat log of the current game session using the session key.
 
@@ -182,7 +184,7 @@ def get_chat_log(game: str, session_key: str) -> dict:
 
     try:
         result = httpx.get(
-            url=f"http://localhost:8000/chat_log/{game}",
+            url=f"http://localhost:8000/chat_log/{game_name}",
             params={"key": session_key},
             timeout=300,
         )
@@ -198,10 +200,11 @@ def get_chat_log(game: str, session_key: str) -> dict:
 
             return result.json()
         else:
-            raise Exception(f"Cannot call api for {game}")
+            raise Exception(f"Cannot call api for {game_name}")
     except httpx.HTTPError as e:
         pprint.pp(e)
         return {"response": f"Error: {str(e)}"}
+
 
 def run_mcp_server():
     mcp.run(transport="streamable-http")

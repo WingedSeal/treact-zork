@@ -102,7 +102,7 @@ class MCPClient:
                     "tool_calls": [
                         ToolCall(
                             tool_name="gen-key",
-                            arguments={"game": state["model_settings"].game_name},
+                            arguments={"game_name": state["model_settings"].game_name},
                         )
                     ],
                     "last_ai_message_result_content": "",
@@ -129,7 +129,7 @@ class MCPClient:
             logger.info("Thinking")
             if env.API_KEY:
                 logger.debug("API_KEY detected. Sleeping to prevent API rate limit.")
-                time.sleep(8)  # Prevent Gemini from exploding
+                time.sleep(5)  # Prevent Gemini from exploding
 
             logger.debug("Thoughts:")
             async for chunk in chain.astream(
@@ -150,13 +150,12 @@ class MCPClient:
                         print(chunk.content, end="", flush=True)
                 ai_message_result += chunk
 
-
             logger.info("Done thinking")
 
             langchain_tool_calls: list[LangChainToolCall] = getattr(
                 ai_message_result, "tool_calls", []
             )
-            
+
             logger.debug(f"LLM Response Content: {ai_message_result.content}")
             logger.debug(f"LLM Tool Calls: {langchain_tool_calls}")
 
@@ -348,7 +347,7 @@ class MCPClient:
         await self.exit_stack.aclose()
 
 
-async def run_client(ai_mode: AIMode, iterations: int = 5) -> None:
+async def run_client(ai_mode: AIMode, iterations: int = 10) -> None:
     logging.info(f"Running MCP-Client as {ai_mode.value} mode")
     client = MCPClient()
     await client.connect_to_server()
