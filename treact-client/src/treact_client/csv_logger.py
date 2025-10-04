@@ -13,14 +13,18 @@ logger = get_logger(__name__)
 
 class _AIModelResponseTypes:
     game_completed = type["AIModelResponse.game_completed"]
+    current_inventory = type["AIModelResponse.current_inventory"]
     current_state = type["AIModelResponse.current_status"]
     score = type["AIModelResponse.score"]
+    move = type["AIModelResponse.move"]
 
 
 class CSVFields(_CSVLoggedState, TypedDict):
     game_completed: _AIModelResponseTypes.game_completed
+    current_inventory: _AIModelResponseTypes.current_inventory
     current_status: _AIModelResponseTypes.current_state
     score: _AIModelResponseTypes.score
+    move: _AIModelResponseTypes.move
 
 
 class CSVLogger:

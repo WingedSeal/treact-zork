@@ -108,6 +108,24 @@ class MCPClient:
                     "last_ai_message_result_content": "",
                     "current_step": state["current_step"] + 1,
                 }
+            if state["current_step"] == state["maximum_step"] - 1:
+                logger.debug("Final step before summarization. Calling 'inventory'.")
+                return {
+                    "tool_calls": [
+                        ToolCall(
+                            tool_name="use-key",
+                            arguments={
+                                "game_name": state["model_settings"].game_name,
+                                "command": "inventory",
+                                "session_key": state["zork_session_key"],
+                            },
+                        ),
+                    ],
+                    "last_ai_message_result_content": state[
+                        "last_ai_message_result_content"
+                    ],
+                    "current_step": state["current_step"] + 1,
+                }
 
             llm = state["model_settings"].llm
             llm_with_tools = llm.bind_tools(self.tools)
@@ -258,7 +276,11 @@ class MCPClient:
                 logger.error(e)
                 return {
                     "ai_model_response": AIModelResponse(
-                        game_completed=False, current_status=str(e), score=0
+                        game_completed=False,
+                        current_inventory="",
+                        current_status=str(e),
+                        score=0,
+                        move=0,
                     ),
                     "current_step": state["current_step"] - 1,
                 }
@@ -274,7 +296,9 @@ class MCPClient:
             ai_model_response: AIModelResponse = cast(
                 AIModelResponse,
                 await chain.ainvoke(
-                    {"tool_call_result_history": state["tool_call_result_history"]}
+                    {
+                        "tool_call_result_history": state["tool_call_result_history"],
+                    }
                 ),
             )
             logger.info(f"Structured Response: {ai_model_response}")
@@ -316,7 +340,7 @@ class MCPClient:
                         llm=model,
                         prompt_template=prompt_template.STANDARD,
                         game_name="zork1",
-                        maximum_step=200,
+                        maximum_step=250,
                         missing_tool_call_threshold=5,
                         history_max_length=10,
                     ).to_new_state(),
@@ -330,9 +354,9 @@ class MCPClient:
                         llm=model,
                         prompt_template=prompt_template.REACT,
                         game_name="zork1",
-                        maximum_step=200,
-                        missing_tool_call_threshold=3,
-                        history_max_length=40,
+                        maximum_step=250,
+                        missing_tool_call_threshold=5,
+                        history_max_length=10,
                     ).to_new_state(),
                     config={"recursion_limit": 1200},
                     # Recursion limit should be > 2 * maximum step

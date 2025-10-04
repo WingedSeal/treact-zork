@@ -98,76 +98,76 @@ def use_key(game_name: str, command: str, session_key: str) -> dict:
         return {"response": f"Error: {str(e)}"}
 
 
-@mcp.tool(name="get-words")
-def get_words(game_name: str) -> dict:
-    """
-        Get the list of all possible words from the given game.
-        (Must be used only one time)
+# @mcp.tool(name="get-words")
+# def get_words(game_name: str) -> dict:
+#     """
+#         Get the list of all possible words from the given game.
+#         (Must be used only one time)
 
-    #     Arguments:
-    #         None
+#     #     Arguments:
+#     #         None
 
-        Returns:
-            dict: The list of all possible commands from the given game.
+#         Returns:
+#             dict: The list of all possible commands from the given game.
 
-    #     Examples:
-    #         {"words": ["take", "inventory", "north", "lamp", ...]}
-    #"""
+#     #     Examples:
+#     #         {"words": ["take", "inventory", "north", "lamp", ...]}
+#     #"""
 
-    try:
-        result = httpx.get(
-            url=f"http://localhost:8000/dict/{game_name}",
-            timeout=300,
-        )
-        if result.status_code == 200:
-            pprint.pp(result.json())
-            logger.info(result.json())
+#     try:
+#         result = httpx.get(
+#             url=f"http://localhost:8000/dict/{game_name}",
+#             timeout=300,
+#         )
+#         if result.status_code == 200:
+#             pprint.pp(result.json())
+#             logger.info(result.json())
 
-            return result.json()
-        else:
-            raise Exception(f"Cannot call api for {game_name}")
-    except httpx.HTTPError as e:
-        pprint.pp(e)
-        return {"response": f"Error: {str(e)}"}
+#             return result.json()
+#         else:
+#             raise Exception(f"Cannot call api for {game_name}")
+#     except httpx.HTTPError as e:
+#         pprint.pp(e)
+#         return {"response": f"Error: {str(e)}"}
 
 
-@mcp.tool(name="get-dict")
-def get_dict(game_name: str) -> dict:
-    """
-    Get the dictionary of words from the given game.
+# @mcp.tool(name="get-dict")
+# def get_dict(game_name: str) -> dict:
+#     """
+#     Get the dictionary of words from the given game.
 
-    Arguments:
-        None
+#     Arguments:
+#         None
 
-    Returns:
-        dict: The game dictionary includes all recognizable words from the game's parser,
-            including commands, objects, directions, adjectives, and other vocabulary
-            that the game engine can understand and process.
+#     Returns:
+#         dict: The game dictionary includes all recognizable words from the game's parser,
+#             including commands, objects, directions, adjectives, and other vocabulary
+#             that the game engine can understand and process.
 
-    Examples:
-     { "dictonary": [
-                {"word": "take", "word_types": ["verb"]},
-                {"word": "lamp", "word_types": ["noun"]},
-                {"word": "north", "word_types": ["direction"]},
-                ...
-                    ]
-    }
-    """
+#     Examples:
+#      { "dictonary": [
+#                 {"word": "take", "word_types": ["verb"]},
+#                 {"word": "lamp", "word_types": ["noun"]},
+#                 {"word": "north", "word_types": ["direction"]},
+#                 ...
+#                     ]
+#     }
+#     """
 
-    try:
-        result = httpx.get(
-            url=f"http://localhost:8000/dict_with_types/{game_name}",
-            timeout=300,
-        )
-        if result.status_code == 200:
-            pprint.pp(result.json())
-            logger.info(result.json())
-            return result.json()
-        else:
-            raise Exception(f"Cannot call api for {game_name}")
-    except httpx.HTTPError as e:
-        pprint.pp(e)
-        return {"response": f"Error: {str(e)}"}
+#     try:
+#         result = httpx.get(
+#             url=f"http://localhost:8000/dict_with_types/{game_name}",
+#             timeout=300,
+#         )
+#         if result.status_code == 200:
+#             pprint.pp(result.json())
+#             logger.info(result.json())
+#             return result.json()
+#         else:
+#             raise Exception(f"Cannot call api for {game_name}")
+#     except httpx.HTTPError as e:
+#         pprint.pp(e)
+#         return {"response": f"Error: {str(e)}"}
 
 
 @mcp.tool(name="get-chat-log")
