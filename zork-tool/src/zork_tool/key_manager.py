@@ -58,7 +58,7 @@ class KeyManager:
             command_history.append(command)
             key = key_data.last_key
 
-        return command_history
+        return command_history[::-1]
 
 
 key_example = str(uuid.uuid4())[:KEY_LENGTH]
