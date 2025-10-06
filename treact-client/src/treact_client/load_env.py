@@ -11,7 +11,7 @@ class Environment(BaseModel):
     )
     SERVER_PORT: int = Field(..., ge=1, le=65535, description="Server port")
     CLIENT_PORT: int = Field(..., ge=1, le=65535, description="Client port")
-    API_KEY: str = Field(..., min_length=1, description="API key must not be empty")
+    API_KEY: str = Field(...)
 
 
 env = Environment(
