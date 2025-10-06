@@ -156,7 +156,7 @@ class MCPClient:
             logger.info("Thinking")
             if env.API_KEY:
                 logger.debug("API_KEY detected. Sleeping to prevent API rate limit.")
-                time.sleep(5)  # Prevent Gemini from exploding
+                time.sleep(8)  # Prevent Gemini from exploding
 
             logger.debug("Thoughts:")
             async for chunk in chain.astream(
@@ -389,7 +389,7 @@ class MCPClient:
         await self.exit_stack.aclose()
 
 
-async def run_client(ai_mode: AIMode, iterations: int = 10) -> None:
+async def run_client(ai_mode: AIMode, iterations: int = 5) -> None:
     logging.info(f"Running MCP-Client as {ai_mode.value} mode")
     client = MCPClient()
     await client.connect_to_server(MCP_SERVER_URL)
