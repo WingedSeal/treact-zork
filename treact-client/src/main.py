@@ -8,7 +8,7 @@ def react_client() -> None:
 
 
 def treact_client() -> None:
-    asyncio.run(run_client(AIMode.TREACT))
+    asyncio.run(run_client(AIMode.TREACT, iterations=1))
 
 
 def standard_client() -> None:

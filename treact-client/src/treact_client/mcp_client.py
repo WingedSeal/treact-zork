@@ -360,7 +360,7 @@ class MCPClient:
                         llm=model,
                         prompt_template=prompt_template.STANDARD,
                         game_name="zork1",
-                        maximum_step=250,
+                        maximum_step=10,
                         missing_tool_call_threshold=5,
                         history_max_length=10,
                     ),
