@@ -12,11 +12,11 @@ class KeyData:
     last_key: str
     seed: str
 
-    def __init__(self, command: str | None, last_key: str) -> None:
+    def __init__(self, command: str | None, last_key: str, seed: str) -> None:
         self.last_query_time = time()
         self.command = command
         self.last_key = last_key
-        self.seed = str(random.randint(1, MAX_SEED))
+        self.seed = seed
 
 
 class KeyManager:
@@ -24,22 +24,23 @@ class KeyManager:
         self.keys_data: dict[str, dict[str, KeyData]] = {game: {} for game in games}
 
     def __get_key(
-        self, game: str, old_key: str, new_command: str | None
+        self, game: str, old_key: str, new_command: str | None, old_seed: str
     ) -> tuple[str, str]:
         while True:
             key = str(uuid.uuid4()).replace("-", "")[:KEY_LENGTH]
             if not key in self.keys_data[game]:
                 break
-        self.keys_data[game][key] = KeyData(new_command, old_key)
+        self.keys_data[game][key] = KeyData(new_command, old_key, old_seed)
         return key, self.keys_data[game][key].seed
 
     def gen_key(self, game: str) -> tuple[str, str]:
-        return self.__get_key(game, "", None)
+        seed = str(random.randint(1, MAX_SEED))
+        return self.__get_key(game, "", None, seed)
 
     def add_command(self, game: str, key: str, command: str) -> tuple[str, str]:
         if key not in self.keys_data[game]:
             return "", ""
-        new_key, seed = self.__get_key(game, key, command)
+        new_key, seed = self.__get_key(game, key, command, self.get_seed(game, key))
         return new_key, seed
 
     def verify_key(self, game: str, key: str) -> bool:
