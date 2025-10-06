@@ -5,7 +5,6 @@ import sys
 from pathlib import Path
 from typing import cast
 
-from treact_client.exceptions import InvalidEnvironmentException
 
 LOG_DIRECTORY = Path("./logs")
 LOG_DIRECTORY.mkdir(exist_ok=True)
