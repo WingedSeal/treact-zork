@@ -31,7 +31,7 @@ class KeyManager:
             if not key in self.keys_data[game]:
                 break
         self.keys_data[game][key] = KeyData(new_command, old_key, old_seed)
-        return key, self.keys_data[game][key].seed
+        return key, old_seed
 
     def gen_key(self, game: str) -> tuple[str, str]:
         seed = str(random.randint(1, MAX_SEED))
