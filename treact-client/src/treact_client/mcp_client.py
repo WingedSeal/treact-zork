@@ -2,7 +2,7 @@ import logging
 import os
 import time
 from contextlib import AsyncExitStack
-from typing import Any, Hashable, Literal, cast
+from typing import Hashable, Literal, cast
 
 import orjson
 import requests
@@ -34,6 +34,11 @@ from .load_env import env
 from .log import get_logger
 from .state import ModelSettings, PartialState, State
 from .tool_call import ToolCall, ToolCallResult, ToolServerResponse
+from .exceptions import (
+    NoSessionException,
+    UnreachableServerException,
+    InvalidToolCallResultException,
+)
 
 logger = get_logger(__name__)
 
@@ -70,18 +75,16 @@ class MCPClient:
         self.tools: list[BaseTool] = []
         self.agent: CompiledStateGraph | None = None
 
-    def is_server_up(self) -> bool:
+    def is_server_up(self, url: str) -> bool:
         try:
-            response = requests.get(MCP_SERVER_URL, timeout=3)
+            response = requests.get(url, timeout=3)
         except (ConnectionError, Timeout, HTTPError):
             return False
         return response.status_code % 100 != 5
 
-    async def _get_session(self) -> ClientSession:
+    async def _get_session(self, url: str) -> ClientSession:
         read_stream, write_stream, session_ID = (
-            await self.exit_stack.enter_async_context(
-                streamablehttp_client(MCP_SERVER_URL)
-            )
+            await self.exit_stack.enter_async_context(streamablehttp_client(url))
         )
         logger.debug(f"Session Acquired: {session_ID}")
         # print(f"Streams acquired: {read_stream=}, {write_stream=}")
@@ -89,12 +92,12 @@ class MCPClient:
             ClientSession(read_stream, write_stream)
         )
 
-    async def connect_to_server(self) -> None:
-        if not self.is_server_up():
-            raise Exception(f"MCP server at {MCP_SERVER_URL} is down.")
-        self.session = await self._get_session()
+    async def connect_to_server(self, url: str) -> None:
+        if not self.is_server_up(url):
+            raise UnreachableServerException(url)
+        self.session = await self._get_session(url)
         await self.session.initialize()
-        logger.info(f"Connected to MCP server at {MCP_SERVER_URL}")
+        logger.info(f"Connected to MCP server at {url}")
         self.tools = await load_mcp_tools(self.session)
         logger.info(f"Tools loaded: {', '.join(tool.name for tool in self.tools)}")
         self.agent = self._get_graph().compile()
@@ -218,13 +221,14 @@ class MCPClient:
 
         async def call_tools(state: State) -> PartialState:
             logger.info(f"Executing {call_tools.__name__}: {state['current_step']}")
-            assert self.session is not None
+            if self.session is None:
+                raise NoSessionException()
             tool_call_results: list[ToolCallResult] = []
             key = ""
             for tool in state["tool_calls"]:
                 logger.debug(f"Calling {tool.tool_name}.")
                 try:
-                    result = await self.session.call_tool(
+                    tool_call_result = await self.session.call_tool(
                         tool.tool_name, arguments=tool.arguments
                     )
                 except Exception as e:
@@ -238,11 +242,9 @@ class MCPClient:
                     logger.error(e)
                     continue
 
-                content = result.content[0]
+                content = tool_call_result.content[0]
                 if not isinstance(content, TextContent):
-                    raise Exception(
-                        f"Expected TextContent from tool (got {type(content)})."
-                    )
+                    raise InvalidToolCallResultException(type(content))
                 server_response: ToolServerResponse = orjson.loads(content.text)
                 logger.info(f"Tool Server Response: {server_response}.")
                 key = server_response.get("new_key", state["zork_session_key"])
@@ -268,7 +270,8 @@ class MCPClient:
 
         async def end_and_summarize(state: State) -> PartialState:
             logger.info(f"Executing {call_tools.__name__}: {state['current_step']}")
-            assert self.session is not None
+            if self.session is None:
+                raise NoSessionException()
             logger.debug(f"Calling get-chat-log.")
             try:
                 await self.session.call_tool(
@@ -339,7 +342,8 @@ class MCPClient:
         """
         Recursion limit should be > 2 * maximum step
         """
-        assert self.agent is not None
+        if self.agent is None:
+            raise NoSessionException()
         return cast(
             State, await self.agent.ainvoke(model_settings.to_new_state(), config)
         )
@@ -388,14 +392,11 @@ class MCPClient:
 async def run_client(ai_mode: AIMode, iterations: int = 10) -> None:
     logging.info(f"Running MCP-Client as {ai_mode.value} mode")
     client = MCPClient()
-    await client.connect_to_server()
+    await client.connect_to_server(MCP_SERVER_URL)
     csv = CSVLogger(model, ai_mode)
     for i in tqdm(iterable=range(iterations)):
         logging.info(f"Talking with Zork. Iteration: {i+1}/{iterations}")
-        result_state = cast(
-            State,
-            await client.talk_with_zork(model=model, ai_mode=ai_mode),
-        )
+        result_state = await client.talk_with_zork(model=model, ai_mode=ai_mode)
         csv.add_result_state(result_state)
 
     await client.cleanup()

@@ -5,10 +5,13 @@ import sys
 from pathlib import Path
 from typing import cast
 
+from treact_client.exceptions import InvalidEnvironmentException
+
 LOG_DIRECTORY = Path("./logs")
 LOG_DIRECTORY.mkdir(exist_ok=True)
 
 FORMATTER = logging.Formatter("%(asctime)s | %(name)s | %(levelname)s | %(message)s")
+CONSOLE_FORMATTER = logging.Formatter("%(name)s | %(levelname)s | %(message)s")
 
 
 def get_current_time_string() -> str:
@@ -60,7 +63,7 @@ def get_logger(name: str) -> CustomLogger:
     logger.setLevel(logging.DEBUG)
 
     stream_handler = logging.StreamHandler(sys.stdout)
-    stream_handler.setFormatter(FORMATTER)
+    stream_handler.setFormatter(CONSOLE_FORMATTER)
     stream_handler.setLevel(log_level)
     logger.addHandler(stream_handler)
 
@@ -90,11 +93,18 @@ def get_logger(name: str) -> CustomLogger:
 
 
 logger = get_logger(__name__)
+
+
+class InvalidEnvironmentException(Exception):
+    def __init__(self, msg: str) -> None:
+        super().__init__(msg)
+
+
 if console_log_level not in LOG_LEVELS:
     error = f"Invalid LOG_LEVEL: {console_log_level}. LOG_LEVEL options: {', '.join(LOG_LEVELS)}"
     logger.critical(error)
-    raise ValueError(error)
+    raise InvalidEnvironmentException(error)
 if file_log_level not in VALID_FILE_LOG_LEVELS:
     error = f"Invalid FILE_LOG_LEVEL: {file_log_level}. FILE_LOG_LEVEL options: {', '.join(VALID_FILE_LOG_LEVELS)}"
     logger.critical(error)
-    raise ValueError(error)
+    raise InvalidEnvironmentException(error)
