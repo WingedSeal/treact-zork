@@ -360,7 +360,7 @@ class MCPClient:
                         llm=model,
                         prompt_template=prompt_template.STANDARD,
                         game_name="zork1",
-                        maximum_step=10,
+                        maximum_step=250,
                         missing_tool_call_threshold=5,
                         history_max_length=10,
                     ),
@@ -389,7 +389,7 @@ class MCPClient:
         await self.exit_stack.aclose()
 
 
-async def run_client(ai_mode: AIMode, iterations: int = 5) -> None:
+async def run_client(ai_mode: AIMode, iterations: int = 10) -> None:
     logging.info(f"Running MCP-Client as {ai_mode.value} mode")
     client = MCPClient()
     await client.connect_to_server(MCP_SERVER_URL)
