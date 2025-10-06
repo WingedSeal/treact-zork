@@ -2,7 +2,7 @@ import logging
 import os
 import time
 from contextlib import AsyncExitStack
-from typing import Hashable, Literal, cast
+from typing import Any, Hashable, Literal, cast
 
 import orjson
 import requests
@@ -13,7 +13,13 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_mcp_adapters.tools import BaseTool, load_mcp_tools
 from langchain_ollama import ChatOllama
-from langgraph.graph.state import END, START, CompiledStateGraph, StateGraph
+from langgraph.graph.state import (
+    END,
+    START,
+    CompiledStateGraph,
+    RunnableConfig,
+    StateGraph,
+)
 from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
 from mcp.types import TextContent
@@ -327,15 +333,25 @@ class MCPClient:
         graph.add_edge("end_and_summarize", END)
         return graph
 
+    async def invoke_agent(
+        self, model_settings: ModelSettings, config: RunnableConfig
+    ) -> State:
+        """
+        Recursion limit should be > 2 * maximum step
+        """
+        assert self.agent is not None
+        return cast(
+            State, await self.agent.ainvoke(model_settings.to_new_state(), config)
+        )
+
     async def talk_with_zork(
         self,
         model: BaseChatModel,
         ai_mode: AIMode,
     ) -> State:
-        assert self.agent is not None
         match ai_mode:
             case AIMode.STANDARD:
-                agent_response = await self.agent.ainvoke(
+                agent_response = await self.invoke_agent(
                     ModelSettings(
                         llm=model,
                         prompt_template=prompt_template.STANDARD,
@@ -343,13 +359,12 @@ class MCPClient:
                         maximum_step=250,
                         missing_tool_call_threshold=5,
                         history_max_length=10,
-                    ).to_new_state(),
+                    ),
                     config={"recursion_limit": 1200},
-                    # Recursion limit should be > 2 * maximum step
                 )
 
             case AIMode.REACT:
-                agent_response = await self.agent.ainvoke(
+                agent_response = await self.invoke_agent(
                     ModelSettings(
                         llm=model,
                         prompt_template=prompt_template.REACT,
@@ -357,14 +372,13 @@ class MCPClient:
                         maximum_step=250,
                         missing_tool_call_threshold=5,
                         history_max_length=10,
-                    ).to_new_state(),
+                    ),
                     config={"recursion_limit": 1200},
-                    # Recursion limit should be > 2 * maximum step
                 )
             case AIMode.TREACT:
                 raise NotImplementedError()
 
-        return cast(State, agent_response)
+        return agent_response
 
     async def cleanup(self) -> None:
         """Clean up resources"""
