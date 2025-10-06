@@ -178,6 +178,6 @@ def create_endpoint(game: str, game_file: str):
 for game, game_file in GAMES.items():
     create_endpoint(game, game_file)
 
+
 def run_server():
     uvicorn.run(app, host="localhost", port=8000)
-
