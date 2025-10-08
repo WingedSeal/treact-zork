@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, NotRequired, TypedDict, Annotated
+from typing import Any, NotRequired, TypeAlias, TypedDict, Annotated, get_type_hints
 from .utils import PeekableQueue
 
 from langchain_core.language_models import BaseChatModel
@@ -31,7 +31,7 @@ class ModelSettings:
                 "model_settings": self,
                 "current_step": 0,
                 "missing_tool_call_count": 0,
-                "tool_call_result_history": PeekableQueue(),
+                "tool_call_result_history_tree": PeekableQueue(),
                 "tool_calls": [],
                 "tool_calls_parent": None,
                 "last_ai_message_result_content": "",

@@ -1,4 +1,13 @@
+from typing import TypeAlias
 from pydantic import BaseModel, Field
+
+
+class AIModelResponseTypes:
+    game_completed: TypeAlias = bool
+    current_inventory: TypeAlias = str
+    current_status: TypeAlias = str
+    score: TypeAlias = int
+    move: TypeAlias = int
 
 
 class AIModelResponse(BaseModel):
@@ -6,7 +15,7 @@ class AIModelResponse(BaseModel):
     Represents the structured response from the AI model regarding the Zork game state.
     """
 
-    game_completed: bool = Field(
+    game_completed: AIModelResponseTypes.game_completed = Field(
         description="""True if the Zork game has been successfully completed by collecting all treasures and putting them in the trophy case in the Living Room of the house.
         The following is the list of treasures and their locations:
         (1)Above Ground
@@ -43,19 +52,19 @@ class AIModelResponse(BaseModel):
         False if the game is still in progress or if the player has died.
         Only set to True when the game explicitly indicates victory/winning condition met."""
     )
-    current_inventory: str = Field(
+    current_inventory: AIModelResponseTypes.current_inventory = Field(
         description="A comma-separated list of items currently held in the player's inventory."
     )
-    current_status: str = Field(
+    current_status: AIModelResponseTypes.current_status = Field(
         description="Current game state description including: current location, recent game response, "
         "inventory status, immediate objectives, or any important game feedback. "
         "This helps track progress and inform the next decision."
     )
 
-    score: int = Field(
+    score: AIModelResponseTypes.score = Field(
         description="Current score in the Zork game, representing the number of treasures collected so far."
     )
 
-    move: int = Field(
+    move: AIModelResponseTypes.move = Field(
         description="The current move number in the Zork game, indicating how many valid actions have been taken."
     )

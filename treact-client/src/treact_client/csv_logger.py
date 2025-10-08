@@ -1,30 +1,22 @@
 import csv
-from typing import TypedDict, cast
+from typing import TypeAlias, TypedDict, cast
 
 from langchain_core.language_models import BaseChatModel
 
 from .ai_mode import AIMode
-from .ai_model_response import AIModelResponse
+from .ai_model_response import AIModelResponseTypes
 from .log import LOG_DIRECTORY, get_current_time_string, get_logger
 from .state import State, _CSVLoggedState
 
 logger = get_logger(__name__)
 
 
-class _AIModelResponseTypes:
-    game_completed = type["AIModelResponse.game_completed"]
-    current_inventory = type["AIModelResponse.current_inventory"]
-    current_state = type["AIModelResponse.current_status"]
-    score = type["AIModelResponse.score"]
-    move = type["AIModelResponse.move"]
-
-
 class CSVFields(_CSVLoggedState, TypedDict):
-    game_completed: _AIModelResponseTypes.game_completed
-    current_inventory: _AIModelResponseTypes.current_inventory
-    current_status: _AIModelResponseTypes.current_state
-    score: _AIModelResponseTypes.score
-    move: _AIModelResponseTypes.move
+    game_completed: AIModelResponseTypes.game_completed
+    current_inventory: AIModelResponseTypes.current_inventory
+    current_status: AIModelResponseTypes.current_status
+    score: AIModelResponseTypes.score
+    move: AIModelResponseTypes.move
 
 
 class CSVLogger:
@@ -47,7 +39,7 @@ class CSVLogger:
             CSVFields,
             {
                 **{
-                    key: result_state[key]
+                    key: result_state[key]  # type: ignore
                     for key in _CSVLoggedState.__annotations__.keys()
                 },
                 **ai_model_response.model_dump(),

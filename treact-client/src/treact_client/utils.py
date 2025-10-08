@@ -1,5 +1,5 @@
 from queue import Queue
-from typing import TypeVar
+from typing import TypeVar, cast
 
 T = TypeVar("T")
 
@@ -7,4 +7,4 @@ T = TypeVar("T")
 class PeekableQueue(Queue[T]):
     def peek(self) -> T:
         with self.mutex:
-            return self.queue[0]
+            return cast(T, self.queue[0])

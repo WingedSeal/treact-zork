@@ -23,7 +23,7 @@ class ToolCallResultNode:
 
     def get_history(self, history_max_length: int) -> list[ToolCallResult]:
         history: list[ToolCallResult] = []
-        current_node = self
+        current_node: ToolCallResultNode | None = self
         for _ in range(history_max_length):
             history.append(self.tool_call_result)
             if current_node is None:
