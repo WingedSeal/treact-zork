@@ -6,7 +6,7 @@ start = perf_counter()
 print("Importing treact_client")
 from treact_client import run_client_file
 
-print(f"Import completed in {perf_counter()-start:2f}s")
+print(f"Import completed in {perf_counter()-start:.2f}s")
 
 
 def standard_client() -> None:
