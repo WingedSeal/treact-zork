@@ -2505,3 +2505,7 @@ collect as many treasures as possible and putting them in the trophy case in the
     > enter barrow
     Observation: You enter the Stone Barrow. Congratulations!
 """
+
+TREACT = """
+TREACT_TEST
+"""

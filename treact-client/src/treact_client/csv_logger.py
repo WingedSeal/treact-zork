@@ -1,9 +1,8 @@
 import csv
-from typing import TypeAlias, TypedDict, cast
+from typing import TypedDict, cast
 
 from langchain_core.language_models import BaseChatModel
 
-from .ai_mode import AIMode
 from .ai_model_response import AIModelResponseTypes
 from .log import LOG_DIRECTORY, get_current_time_string, get_logger
 from .state import State, _CSVLoggedState
@@ -20,11 +19,11 @@ class CSVFields(_CSVLoggedState, TypedDict):
 
 
 class CSVLogger:
-    def __init__(self, model: BaseChatModel, ai_mode: AIMode) -> None:
+    def __init__(self, model: BaseChatModel, client_name: str) -> None:
         current_time_string = get_current_time_string()
         self.csv_file = (
             LOG_DIRECTORY
-            / f"{ai_mode.value}_{model.__class__.__name__}_{current_time_string}.csv"
+            / f"{client_name.lower().replace(' ', '')}_{model.__class__.__name__}_{current_time_string}.csv"
         )
         with self.csv_file.open("w", newline="") as file:
             writer = csv.DictWriter(file, fieldnames=CSVFields.__annotations__.keys())

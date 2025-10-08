@@ -28,7 +28,6 @@ from tqdm import tqdm
 from pprint import pformat
 
 from . import prompt_template
-from .ai_mode import AIMode
 from .ai_model_response import AIModelResponse
 from .csv_logger import CSVLogger
 from .load_env import env
@@ -370,70 +369,41 @@ class MCPClient:
             State, await self.agent.ainvoke(model_settings.to_new_state(), config)
         )
 
-    async def talk_with_zork(
-        self,
-        model: BaseChatModel,
-        ai_mode: AIMode,
-    ) -> State:
-        match ai_mode:
-            case AIMode.STANDARD:
-                agent_response = await self.invoke_agent(
-                    ModelSettings(
-                        llm=model,
-                        prompt_template=prompt_template.STANDARD,
-                        game_name="zork1",
-                        maximum_step=250,
-                        missing_tool_call_threshold=5,
-                        history_max_length=10,
-                        max_branch_per_node=1,
-                    ),
-                    config={"recursion_limit": 1200},
-                )
-
-            case AIMode.REACT:
-                agent_response = await self.invoke_agent(
-                    ModelSettings(
-                        llm=model,
-                        prompt_template=prompt_template.REACT,
-                        game_name="zork1",
-                        maximum_step=250,
-                        missing_tool_call_threshold=5,
-                        history_max_length=10,
-                        max_branch_per_node=1,
-                    ),
-                    config={"recursion_limit": 1200},
-                )
-            case AIMode.ACTION:
-                agent_response = await self.invoke_agent(
-                    ModelSettings(
-                        llm=model,
-                        prompt_template=prompt_template.ACTION,
-                        game_name="zork1",
-                        maximum_step=250,
-                        missing_tool_call_threshold=5,
-                        history_max_length=10,
-                        max_branch_per_node=1,
-                    ),
-                    config={"recursion_limit": 1200},
-                )
-            case AIMode.TREACT:
-                raise NotImplementedError()
-
-        return agent_response
-
     async def cleanup(self) -> None:
         """Clean up resources"""
         await self.exit_stack.aclose()
 
 
-async def run_client(ai_mode: AIMode, iterations: int = 10) -> None:
-    logging.info(f"Running MCP-Client as {ai_mode.value} mode")
+async def run_client(
+    client_name: str,
+    *,
+    prompt_template: str,
+    game_name: str,
+    maximum_step: int,
+    missing_tool_call_threshold: int,
+    history_max_length: int,
+    max_branch_per_node: int,
+    iterations: int,
+    config: RunnableConfig,
+) -> None:
+    logging.info(f"Running MCP-Client: {client_name}")
     client = MCPClient()
     await client.connect_to_server(MCP_SERVER_URL)
-    csv = CSVLogger(model, ai_mode)
+    csv = CSVLogger(model, client_name)
     for i in tqdm(iterable=range(iterations)):
         logging.info(f"Talking with Zork. Iteration: {i+1}/{iterations}")
-        result_state = await client.talk_with_zork(model=model, ai_mode=ai_mode)
+        result_state = await client.invoke_agent(
+            ModelSettings(
+                llm=model,
+                prompt_template=prompt_template,
+                game_name=game_name,
+                maximum_step=maximum_step,
+                missing_tool_call_threshold=missing_tool_call_threshold,
+                history_max_length=history_max_length,
+                max_branch_per_node=max_branch_per_node,
+            ),
+            config=config,
+        )
         csv.add_result_state(result_state)
 
     await client.cleanup()
