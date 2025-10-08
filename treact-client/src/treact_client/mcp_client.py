@@ -24,6 +24,7 @@ from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
 from mcp.types import TextContent
 from requests.exceptions import ConnectionError, HTTPError, Timeout
+from sqlalchemy import case
 from tqdm import tqdm
 
 from . import prompt_template
@@ -372,6 +373,18 @@ class MCPClient:
                     ModelSettings(
                         llm=model,
                         prompt_template=prompt_template.REACT,
+                        game_name="zork1",
+                        maximum_step=250,
+                        missing_tool_call_threshold=5,
+                        history_max_length=10,
+                    ),
+                    config={"recursion_limit": 1200},
+                )
+            case AIMode.ACTION:
+                agent_response = await self.invoke_agent(
+                    ModelSettings(
+                        llm=model,
+                        prompt_template=prompt_template.ACTION,
                         game_name="zork1",
                         maximum_step=250,
                         missing_tool_call_threshold=5,

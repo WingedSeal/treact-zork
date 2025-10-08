@@ -120,197 +120,2388 @@ collect as many treasures as possible and putting them in the trophy case in the
     
 * Example Trajectory *
 
-(1) Above Ground and Initial Descent
-    Thought: Initializing game and gathering essential items above ground. Must acquire the egg for the Thief to open later, then grab light, weapon, and container before descending.
-    Action: open mailbox
-    Observation: Mailbox opened. Get the leaflet and read it, then drop it.
+(1) Above Ground
+    think: Start by exploring the mailbox for any onboarding info.
+    > open mailbox
+    Observation: The mailbox opens revealing a leaflet.
 
-    Thought: Leaflet is no longer needed. The next steps are to find the egg and then enter the house for the lantern and sword. The egg is found in a nest North of the starting location.
-    Action: go north
-    Observation: North of House. Go north to a Forest Path location.
+    think: Read and discard the leaflet; it is not needed later.
+    > take leaflet
+    Observation: Taken.
 
-    Thought: Now at the Forest Path. Climb the tree to get the egg and then descend, ensuring I attempt to open it so the Thief will process it later.
-    Action: climb tree
-    Observation: Get the egg from the nest. Go back down.
+    think: Understand the basics, then free up inventory.
+    > read leaflet
+    Observation: It welcomes you to Zork.
 
-    Thought: Must 'try to open egg' to trigger the later event with the Thief. Now, head to the house (South then East) to enter via the window.
-    Action: try to open egg
-    Observation: You find that you can't open the egg. Go south and east to Behind House.
+    think: Drop it to save weight.
+    > drop leaflet
+    Observation: Dropped.
 
-    Thought: At Behind House, open the window and enter the Kitchen. In the Kitchen, grab the sack and bottle, noting the garlic and potential use of the lunch/water.
-    Action: open window
-    Observation: You open the window. Enter house. Kitchen. Get sack and bottle. Open sack (contains lunch and garlic).
+    think: The jeweled egg is in a nest north; head for the forest path.
+    > go north
+    Observation: You are on a forest path near a large tree.
 
-    Thought: Keep the garlic and sack, as advised. Move west to the Living Room to find the main gear: the sword, the lantern, and the trap door to the dungeon.
-    Action: go west
-    Observation: Living Room. Get sword and lantern. Move rug. Open trap door.
+    think: Climb to reach the nest with the egg.
+    > climb tree
+    Observation: You see a bird's nest containing a jeweled egg.
 
-    Thought: Lights on and trap door open. Time to descend and begin the underground adventure. I will also save before dangerous actions, as advised.
-    Action: turn on lamp
-    Observation: The lamp is now on. Go down into the Great Underground Empire.  
+    think: Secure the treasure candidate.
+    > take egg
+    Observation: Taken.
+
+    think: Attempt to open it so the Thief will handle it later.
+    > open egg
+    Observation: It won't open.
+
+    think: Enter the house via the kitchen window behind the house.
+    > go south
+    Observation: You are behind the white house. A small window is here.
+
+    think: Use the window to get in.
+    > open window
+    Observation: The window opens.
+
+    think: Enter the kitchen to gear up.
+    > enter window
+    Observation: You are in the kitchen.
+
+    think: Collect a container and utility items.
+    > take sack
+    Observation: Taken.
+
+    think: Check contents for useful items.
+    > open sack
+    Observation: Inside are a lunch and a clove of garlic.
+
+    think: Keep garlic; it helps later in the bat area. Also take the bottle.
+    > take garlic
+    Observation: Taken.
+
+    think: Another useful item for later puzzles.
+    > take bottle
+    Observation: Taken.
+
+    think: Move to the Living Room for core gear.
+    > go west
+    Observation: You are in the Living Room: a rug, a sword, a brass lantern, and a closed trap door are here.
+
+    think: Arm myself.
+    > take sword
+    Observation: Taken.
+
+    think: Secure a reliable light source.
+    > take lantern
+    Observation: Taken.
+
+    think: Check beneath the rug for a way down.
+    > move rug
+    Observation: A closed trap door is revealed.
+
+    think: Open access to the underground area.
+    > open trap door
+    Observation: Opened.
+
+    think: Light up before descending.
+    > turn on lantern
+    Observation: The lantern is now on.
+
+    think: Begin underground exploration.
+    > go down
+    Observation: You are in the Cellar.
+
+(2) Cellar & Maze
+    think: Drop the egg here so the Thief can later open it.
+    > drop egg
+    Observation: Dropped.
+
+    think: The troll blocks north; engage carefully with the sword.
+    > go north
+    Observation: A troll bars the way.
+
+    think: Attack until he's defeated.
+    > attack troll with sword
+    Observation: You wound the troll.
+
+    think: Press the advantage.
+    > attack troll with sword
+    Observation: The troll falls dead.
+
+    think: Manage weight; the sword isn't needed further here.
+    > drop sword
+    Observation: Dropped.
+
+    think: Enter the maze to locate coins and key.
+    > go west
+    Observation: A maze of twisty passages.
+
+    think: Continue deeper.
+    > go west
+    Observation: Another twisty passage.
+
+    think: Change elevation to the cache.
+    > go up
+    Observation: You see a bag of coins and a skeleton key.
+
+    think: Take the treasure first.
+    > take bag of coins
+    Observation: Taken.
+
+    think: Take the key for exits/puzzles.
+    > take skeleton key
+    Observation: Taken.
+
+    think: Head to the Cyclops Room to open a direct route back.
+    > go southwest
+    Observation: Narrow tunnels.
+
+    think: Keep moving.
+    > go east
+    Observation: Cyclops Room; a cyclops glowers at you.
+
+    think: Use the password solution to avoid combat and open a shortcut.
+    > say "Odysseus"
+    Observation: The cyclops flees, smashing a hole in the wall.
+
+    think: Return to the house through the new passage.
+    > go east
+    Observation: You are back in the Living Room.
+
+    think: Deposit the first treasure.
+    > open trophy case
+    Observation: Opened.
+
+    think: Secure the coins.
+    > put bag of coins in trophy case
+    Observation: Placed.
+
+    think: Fetch the painting from the Gallery and deposit it.
+    > go down
+    Observation: Cellar.
+
+    think: Head to the Gallery.
+    > go south
+    Observation: A corridor continues east.
+
+    think: Proceed.
+    > go east
+    Observation: The Gallery; a painting hangs here.
+
+    think: Take the painting.
+    > take painting
+    Observation: Taken.
+
+    think: Return to deposit.
+    > go west
+    Observation: Corridor.
+
+    think: Back to the house.
+    > go north
+    Observation: Cellar.
+
+    think: Up to the Living Room.
+    > go up
+    Observation: Living Room.
+
+    think: Place the painting.
+    > put painting in trophy case
+    Observation: Placed.
+
+(3) Dam & Reservoir
+    think: Get the platinum bar by solving the Loud Room with 'echo'.
+    > go down
+    Observation: Cellar.
+
+    think: Head toward the Loud Room.
+    > go north
+    Observation: Corridor.
+
+    think: Continue.
+    > go east
+    Observation: Passage.
+
+    think: Continue.
+    > go east
+    Observation: Passage.
+
+    think: Enter the Loud Room.
+    > go east
+    Observation: The noise is overwhelming.
+
+    think: Silence the room to reveal the treasure.
+    > echo
+    Observation: The room quiets; a platinum bar is visible.
+
+    think: Take it.
+    > take platinum bar
+    Observation: Taken.
+
+    think: Return to deposit.
+    > go west
+    Observation: Passage.
+
+    think: Keep going.
+    > go west
+    Observation: Passage.
+
+    think: Keep going.
+    > go west
+    Observation: Corridor.
+
+    think: Up to the Living Room.
+    > go south
+    Observation: Cellar.
+
+    think: Up.
+    > go up
+    Observation: Living Room.
+
+    think: Deposit the bar.
+    > put platinum bar in trophy case
+    Observation: Placed.
+
+    think: Now empty the reservoir for the trunk of jewels; go to Dam Lobby.
+    > go down
+    Observation: Cellar.
+
+    think: Head eastward.
+    > go north
+    Observation: Corridor.
+
+    think: Continue.
+    > go east
+    Observation: Passage.
+
+    think: Continue.
+    > go east
+    Observation: Passage.
+
+    think: Go up toward dam area.
+    > go up
+    Observation: You are near the dam.
+
+    think: Move along to the lobby.
+    > go east
+    Observation: A corridor slopes slightly.
+
+    think: Enter Dam Lobby.
+    > go north
+    Observation: Dam Lobby; a matchbook lies here.
+
+    think: Take the matchbook.
+    > take matchbook
+    Observation: Taken.
+
+    think: Maintenance Room has tools and a button; go there.
+    > go east
+    Observation: Maintenance Room; a wrench and a screwdriver are here. A yellow button is on the wall.
+
+    think: Grab the tools.
+    > take wrench
+    Observation: Taken.
+
+    think: Take the screwdriver too.
+    > take screwdriver
+    Observation: Taken.
+
+    think: Release the bolt at the dam.
+    > push yellow button
+    Observation: You hear a distant metallic click.
+
+    think: Go back to the dam to open the floodgates.
+    > go south
+    Observation: Corridor.
+
+    think: Continue.
+    > go south
+    Observation: At the dam; a bolt is accessible.
+
+    think: Open the floodgates.
+    > turn bolt with wrench
+    Observation: The spillway opens; water begins to drain.
+
+    think: Tool no longer needed.
+    > drop wrench
+    Observation: Dropped.
+
+    think: Wait for the water level to fall enough.
+    > wait
+    Observation: Time passes; the water level drops.
+
+    think: Check the reservoir floor.
+    > go west
+    Observation: Reservoir South; water is low.
+
+    think: Proceed to the floor.
+    > go north
+    Observation: Reservoir Floor; a trunk of jewels rests here.
+
+    think: Take the trunk.
+    > take trunk of jewels
+    Observation: Taken (heavy).
+
+    think: Return to deposit.
+    > go south
+    Observation: Reservoir South.
+
+    think: Head back through passages.
+    > go southwest
+    Observation: Narrow ledge passage.
+
+    think: Continue.
+    > go southwest
+    Observation: Tunnel slopes upward.
+
+    think: Keep going.
+    > go west
+    Observation: Passage.
+
+    think: Toward the house.
+    > go south
+    Observation: Corridor.
+
+    think: Up to Living Room.
+    > go up
+    Observation: Living Room.
+
+    think: Deposit the trunk.
+    > put trunk of jewels in trophy case
+    Observation: Placed.
+
+    think: Retrieve the crystal trident from Atlantis Room via reservoir path.
+    > go down
+    Observation: Cellar.
+
+    think: Head north.
+    > go north
+    Observation: Corridor.
+
+    think: Eastward.
+    > go east
+    Observation: Passage.
+
+    think: Toward reservoir.
+    > go north
+    Observation: A slippery tunnel.
+
+    think: Continue.
+    > go northeast
+    Observation: Damp cavern.
+
+    think: Reach the north side.
+    > go north
+    Observation: Reservoir North; an air pump is here.
+
+    think: Take the pump for later river use; then continue to Atlantis Room.
+    > take air pump
+    Observation: Taken.
+
+    think: Go farther north.
+    > go north
+    Observation: Atlantis Room; the crystal trident gleams here.
+
+    think: Take the trident.
+    > take crystal trident
+    Observation: Taken.
+
+    think: Return to deposit; use the slide to Cellar.
+    > go up
+    Observation: Sloping room above.
+
+    think: Move toward the slide.
+    > go north
+    Observation: Slide Room; a chute leads down.
+
+    think: Slide to the cellar.
+    > go down
+    Observation: You slide into the Cellar.
+
+    think: Back upstairs to deposit.
+    > go up
+    Observation: Living Room.
+
+    think: Place the trident.
+    > put crystal trident in trophy case
+    Observation: Placed.
+
+(4) Temple Area & Hades
+    think: Get the rope from the Attic for the Dome/Torch Rooms.
+    > go east
+    Observation: Kitchen.
+
+    think: Up to the Attic.
+    > go up
+    Observation: Attic; a coil of rope lies here.
+
+    think: Take it.
+    > take rope
+    Observation: Taken.
+
+    think: Return toward Dome Room via Cellar.
+    > go down
+    Observation: Kitchen.
+
+    think: West then down.
+    > go west
+    Observation: Living Room.
+
+    think: Down.
+    > go down
+    Observation: Cellar.
+
+    think: Head to Dome Room.
+    > go north
+    Observation: Corridor.
+
+    think: Continue east.
+    > go east
+    Observation: Passage.
+
+    think: Continue east.
+    > go east
+    Observation: Passage.
+
+    think: Southeast.
+    > go southeast
+    Observation: A circular chamber.
+
+    think: East to Dome Room.
+    > go east
+    Observation: Dome Room; a railing overlooks a dark drop.
+
+    think: Secure a descent.
+    > tie rope to railing
+    Observation: The rope dangles below.
+
+    think: Go down to the Torch Room.
+    > go down
+    Observation: Torch Room; an ivory torch rests here.
+
+    think: Take the torch and save lamp life.
+    > take torch
+    Observation: Taken.
+
+    think: Conserve lantern power.
+    > turn off lantern
+    Observation: Lantern off.
+
+    think: South to the Temple to stage the ritual path later.
+    > go south
+    Observation: Temple; an altar is here.
+
+    think: Travel to Egyptian Room for coffin and sceptre.
+    > go east
+    Observation: Egyptian Room; a heavy coffin sits here.
+
+    think: Take the coffin.
+    > take coffin
+    Observation: Taken (heavy).
+
+    think: Open for the sceptre.
+    > open coffin
+    Observation: Inside is a sceptre.
+
+    think: Take the sceptre.
+    > take sceptre
+    Observation: Taken.
+
+    think: To Altar and use prayer shortcut to surface to deposit.
+    > go west
+    Observation: Temple.
+
+    think: South to Altar.
+    > go south
+    Observation: Altar Room.
+
+    think: Teleport via prayer.
+    > pray
+    Observation: You are teleported to a forest location.
+
+    think: Return to the house to deposit.
+    > go east
+    Observation: Forest path.
+
+    think: Go south.
+    > go south
+    Observation: Near the house.
+
+    think: Enter kitchen.
+    > go east
+    Observation: Behind House.
+
+    think: Use window.
+    > enter window
+    Observation: Kitchen.
+
+    think: West to Living Room.
+    > go west
+    Observation: Living Room.
+
+    think: Deposit the coffin.
+    > put coffin in trophy case
+    Observation: Placed.
+
+    think: Deposit the sceptre.
+    > put sceptre in trophy case
+    Observation: Placed.
+
+    think: Return to Temple to perform the Hades ritual for the skull.
+    > go down
+    Observation: Cellar.
+
+    think: Head back along the path to Temple.
+    > go north
+    Observation: Corridor.
+
+    think: East.
+    > go east
+    Observation: Passage.
+
+    think: East.
+    > go east
+    Observation: Passage.
+
+    think: Southeast.
+    > go southeast
+    Observation: Circular chamber.
+
+    think: East.
+    > go east
+    Observation: Dome Room with the rope.
+
+    think: Down to Torch Room then south to Temple staging area.
+    > go down
+    Observation: Torch Room.
+
+    think: South.
+    > go south
+    Observation: Temple.
+
+    think: Gather ritual items (bell, candles, black book, matchbook).
+    > take bell
+    Observation: Taken.
+
+    think: Ready the matches.
+    > open matchbook
+    Observation: Matchbook opened.
+
+    think: Take candles and book.
+    > take candles
+    Observation: Taken.
+
+    think: Take the black book.
+    > take black book
+    Observation: Taken.
+
+    think: Descend to Entrance to Hades.
+    > go south
+    Observation: Altar Room.
+
+    think: Downward into the depths.
+    > go down
+    Observation: Stairs descend into gloom.
+
+    think: Continue down to the entrance.
+    > go down
+    Observation: Entrance to Hades.
+
+    think: Begin the ritual to open the way.
+    > ring bell
+    Observation: A chill wind blows; you drop the bell and candles.
+
+    think: Recover the candles to proceed.
+    > get candles
+    Observation: Taken.
+
+    think: Light a match.
+    > light match
+    Observation: The match flares.
+
+    think: Light the candles.
+    > light candles
+    Observation: The candles burn with a steady flame.
+
+    think: Read the book to complete the rite.
+    > read book
+    Observation: Spectral forms rise and fade; a passage opens to the south.
+
+    think: Conserve candles for safety.
+    > put out candles
+    Observation: Extinguished.
+
+    think: Discard the book.
+    > drop black book
+    Observation: Dropped.
+
+    think: Enter the Land of the Dead to retrieve the skull.
+    > go south
+    Observation: Land of the Dead; a crystal skull rests here.
+
+    think: Take the skull.
+    > take crystal skull
+    Observation: Taken.
+
+    think: Return to deposit the skull.
+    > go north
+    Observation: Entrance to Hades.
+
+    think: Upward.
+    > go up
+    Observation: Stairway.
+
+    think: Up again.
+    > go up
+    Observation: Altar Room.
+
+    think: Westward and back to house.
+    > go west
+    Observation: Temple.
+
+    think: West again.
+    > go west
+    Observation: Torch Room/Dome area.
+
+    think: Up the rope.
+    > go up
+    Observation: Dome Room.
+
+    think: West.
+    > go west
+    Observation: Circular chamber.
+
+    think: Northwest toward house route.
+    > go northwest
+    Observation: Passage.
+
+    think: West again.
+    > go west
+    Observation: Corridor.
+
+    think: South.
+    > go south
+    Observation: Cellar.
+
+    think: Up to Living Room to deposit.
+    > go up
+    Observation: Living Room.
+
+    think: Place the skull.
+    > put crystal skull in trophy case
+    Observation: Placed.
+
+(5) Old Man River
+    think: Prepare the raft at Dam Base; keep sharp items in the sack.
+    > go south
+    Observation: You leave the Living Room.
+
+    think: Down to the Cellar route toward dam base.
+    > go down
+    Observation: Cellar.
+
+    think: Navigate toward dam base.
+    > go north
+    Observation: Corridor.
+
+    think: East.
+    > go east
+    Observation: Passage.
+
+    think: Northward toward river base.
+    > go north
+    Observation: Damp tunnel.
+
+    think: East then up to reach the base area.
+    > go east
+    Observation: Narrow ledge.
+
+    think: Up toward dam structures.
+    > go up
+    Observation: Near base of the dam.
+
+    think: Eastward.
+    > go east
+    Observation: Dam Base; a pile of plastic lies here.
+
+    think: Inflate the raft to travel.
+    > inflate pile with air pump
+    Observation: The raft inflates.
+
+    think: Avoid puncture—stash the screwdriver and sceptre.
+    > put screwdriver in sack
+    Observation: Done.
+
+    think: Store the sceptre as well.
+    > put sceptre in sack
+    Observation: Done.
+
+    think: Board the raft.
+    > get in boat
+    Observation: You climb into the raft.
+
+    think: Launch and drift downstream until the buoy.
+    > launch
+    Observation: The current carries you away.
+
+    think: Pass time while drifting.
+    > wait
+    Observation: You float past rocky banks.
+
+    think: Continue drifting.
+    > wait
+    Observation: The river bends.
+
+    think: Continue.
+    > wait
+    Observation: A red buoy appears nearby.
+
+    think: Grab the buoy.
+    > get buoy
+    Observation: Taken.
+
+    think: Land at Sandy Beach to open it.
+    > go east
+    Observation: Sandy Beach; the raft beaches.
+
+    think: Disembark.
+    > stand
+    Observation: You stand on the sand.
+
+    think: Open buoy for treasure.
+    > open buoy
+    Observation: Inside is an emerald.
+
+    think: Take the emerald.
+    > take emerald
+    Observation: Taken.
+
+    think: Drop the empty buoy.
+    > drop buoy
+    Observation: Dropped.
+
+    think: Take the shovel for digging at the cave.
+    > take shovel
+    Observation: Taken.
+
+    think: Head to the Sandy Cave.
+    > go northeast
+    Observation: Sandy Cave.
+
+    think: Dig repeatedly to uncover the scarab.
+    > dig sand
+    Observation: You dig a hole.
+
+    think: Continue until you find something.
+    > dig sand
+    Observation: You uncover a small object.
+
+    think: Keep digging for the treasure.
+    > dig sand
+    Observation: You see the outline of a trinket.
+
+    think: One more should surface it.
+    > dig sand
+    Observation: A scarab is exposed.
+
+    think: Take the scarab.
+    > take scarab
+    Observation: Taken.
+
+    think: Return to the falls to use the rainbow route with the sceptre.
+    > go southwest
+    Observation: Sandy Beach.
+
+    think: South toward the falls.
+    > go south
+    Observation: River narrows.
+
+    think: Continue south to Aragain Falls.
+    > go south
+    Observation: Aragain Falls; mist and a rainbow arc.
+
+    think: Use the sceptre to form the bridge.
+    > wave sceptre
+    Observation: A rainbow bridge forms to the west.
+
+    think: Cross for the pot of gold.
+    > go west
+    Observation: A colorful span.
+
+    think: Continue.
+    > go west
+    Observation: End of Rainbow; a pot of gold gleams here.
+
+    think: Take the pot.
+    > take pot of gold
+    Observation: Taken.
+
+    think: Return to Living Room to deposit river treasures.
+    > go southwest
+    Observation: Canyon trail.
+
+    think: Up.
+    > go up
+    Observation: Steep path.
+
+    think: Up again.
+    > go up
+    Observation: Forest edge.
+
+    think: Northwest toward house.
+    > go northwest
+    Observation: Behind the house.
+
+    think: Enter the house.
+    > enter window
+    Observation: Kitchen.
+
+    think: West to Living Room.
+    > go west
+    Observation: Living Room.
+
+    think: Deposit emerald, scarab, sceptre, and pot of gold.
+    > put emerald in trophy case
+    Observation: Placed.
+
+    think: Next item.
+    > put scarab in trophy case
+    Observation: Placed.
+
+    think: Store the sceptre as well.
+    > put sceptre in trophy case
+    Observation: Placed.
+
+    think: Finally, the pot of gold.
+    > put pot of gold in trophy case
+    Observation: Placed.
+
+(6) Coal Mine
+    think: Prepare garlic for bat avoidance and enter Mirror Rooms.
+    > take garlic out of sack
+    Observation: Taken.
+
+    think: Head to South Mirror Room.
+    > go down
+    Observation: Cellar.
+
+    think: Navigate eastward.
+    > go north
+    Observation: Corridor.
+
+    think: Continue east.
+    > go east
+    Observation: Passage.
+
+    think: Again east.
+    > go east
+    Observation: Passage.
+
+    think: South toward mirror chamber.
+    > go south
+    Observation: Stone hall.
+
+    think: South into South Mirror Room.
+    > go south
+    Observation: South Mirror Room; a mirror spans the wall.
+
+    think: Use the mirror teleport.
+    > touch mirror
+    Observation: You are in the North Mirror Room.
+
+    think: Go to Bat Room for the jade figurine; garlic will repel it.
+    > go north
+    Observation: Tunnel.
+
+    think: West.
+    > go west
+    Observation: Junction.
+
+    think: North.
+    > go north
+    Observation: Cavern.
+
+    think: West to Bat Room.
+    > go west
+    Observation: Bat Room; the bat avoids you, holding its nose.
+
+    think: Take the jade figurine.
+    > take jade figurine
+    Observation: Taken.
+
+    think: Move to Shaft Room to prep the basket.
+    > go east
+    Observation: Shaft Room; a basket hangs from a chain.
+
+    think: Stage tools for the coal machine puzzle.
+    > put candles in basket
+    Observation: Done.
+
+    think: Add the screwdriver too.
+    > put screwdriver in basket
+    Observation: Done.
+
+    think: Switch to lantern and leave torch here.
+    > drop torch
+    Observation: Dropped.
+
+    think: Power on the lantern for mine work.
+    > turn on lantern
+    Observation: Lantern on.
+
+    think: Down to Gas Room for the bracelet.
+    > go north
+    Observation: Narrow tunnel.
+
+    think: Descend.
+    > go down
+    Observation: Gas Room; a bracelet lies here.
+
+    think: Take the bracelet.
+    > take bracelet
+    Observation: Taken.
+
+    think: Head to Ladder Bottom for coal.
+    > go east
+    Observation: Passage.
+
+    think: Northeast.
+    > go northeast
+    Observation: Passage.
+
+    think: Southeast.
+    > go southeast
+    Observation: Timbered tunnel.
+
+    think: Southwest toward ladders.
+    > go southwest
+    Observation: Ladder shaft.
+
+    think: Down.
+    > go down
+    Observation: Ladder.
+
+    think: Down again to bottom.
+    > go down
+    Observation: Ladder Bottom; a pile of coal is here.
+
+    think: Take coal for processing.
+    > take coal
+    Observation: Taken.
+
+    think: Return to Shaft Room to load basket.
+    > go north
+    Observation: Ladder shaft.
+
+    think: Up.
+    > go up
+    Observation: Ladder.
+
+    think: Up again.
+    > go up
+    Observation: Shaft above.
+
+    think: North.
+    > go north
+    Observation: Passage.
+
+    think: East.
+    > go east
+    Observation: Junction.
+
+    think: South.
+    > go south
+    Observation: Passage.
+
+    think: North (loop) then up to reach the shaft (route quirk).
+    > go north
+    Observation: Passage.
+
+    think: Up to the Shaft Room.
+    > go up
+    Observation: Shaft Room; basket hangs here.
+
+    think: Load coal into the basket.
+    > put coal in basket
+    Observation: Done.
+
+    think: Light candles to ignite in the machine below.
+    > get candles
+    Observation: Taken.
+
+    think: Light a match.
+    > light match
+    Observation: Lit.
+
+    think: Light the candles.
+    > light candles
+    Observation: Candles burn.
+
+    think: Return candles to basket for transport.
+    > put candles in basket
+    Observation: Done.
+
+    think: Lower the basket for processing below.
+    > lower basket
+    Observation: The basket descends out of sight.
+
+    think: Take the side route to retrieve items from the bottom.
+    > go north
+    Observation: Passage.
+
+    think: Downward.
+    > go down
+    Observation: Sloping tunnel.
+
+    think: East.
+    > go east
+    Observation: Timber Room.
+
+    think: Northeast.
+    > go northeast
+    Observation: Side chamber.
+
+    think: Southeast.
+    > go southeast
+    Observation: Narrow way.
+
+    think: Southwest.
+    > go southwest
+    Observation: Ladder area.
+
+    think: Down.
+    > go down
+    Observation: Ladder.
+
+    think: Down again to bottom.
+    > go down
+    Observation: Ladder Bottom.
+
+    think: West to Timber Room staging.
+    > go west
+    Observation: Timber Room.
+
+    think: Retrieve processed items from the basket area (via Drafty → Machine).
+    > go west
+    Observation: Drafty Room; the basket is accessible.
+
+    think: Retrieve coal (now ready), screwdriver, and candles from the basket.
+    > get coal
+    Observation: Taken from basket.
+
+    think: Take the screwdriver.
+    > get screwdriver
+    Observation: Taken.
+
+    think: Take the candles.
+    > get candles
+    Observation: Taken.
+
+    think: Use the machine room to process coal into a diamond.
+    > go south
+    Observation: Machine Room; a machine with a switch is here.
+
+    think: Feed the coal.
+    > open machine
+    Observation: The machine opens.
+
+    think: Insert the coal.
+    > put coal in machine
+    Observation: Inside.
+
+    think: Close it.
+    > close machine
+    Observation: Closed.
+
+    think: Power the machine.
+    > turn switch with screwdriver
+    Observation: The machine hums, then stops.
+
+    think: Collect the output.
+    > open machine
+    Observation: Inside is a glittering diamond.
+
+    think: Take the diamond and discard the screwdriver.
+    > take diamond
+    Observation: Taken.
+
+    think: No longer needed.
+    > drop screwdriver
+    Observation: Dropped.
+
+    think: Return to Shaft Room, raise basket, and recover the candles; then deposit all treasures.
+    > go north
+    Observation: Drafty Room.
+
+    think: East to Timber Room to gather remaining items (except timber).
+    > go east
+    Observation: Timber Room.
+
+    think: Back through mine toward shaft.
+    > go east
+    Observation: Passage.
+
+    think: Upward route.
+    > go up
+    Observation: Tunnel rises.
+
+    think: Up again toward shaft.
+    > go up
+    Observation: Shaft Room.
+
+    think: Raise the basket.
+    > raise basket
+    Observation: The basket rises into view.
+
+    think: Retrieve candles and ensure torch if present.
+    > get candles
+    Observation: Taken.
+
+    think: Conserve candles now.
+    > put out candles
+    Observation: Extinguished.
+
+    think: Return to Living Room to deposit diamond, bracelet, figurine (and torch if recovered).
+    > go west
+    Observation: Tunnel.
+
+    think: South/east/south/down to Cellar, then up to Living Room.
+    > go south
+    Observation: Passage.
+
+    think: East.
+    > go east
+    Observation: Passage.
+
+    think: South.
+    > go south
+    Observation: Cellar stairs.
+
+    think: Up to Living Room.
+    > go up
+    Observation: Living Room.
+
+    think: Deposit the haul.
+    > put diamond in trophy case
+    Observation: Placed.
+
+    think: Next.
+    > put bracelet in trophy case
+    Observation: Placed.
+
+    think: And the figurine.
+    > put jade figurine in trophy case
+    Observation: Placed.
+
+    (7) Treasure Room & Barrow
+    think: Acquire the nasty knife and confront the Thief in the Treasure Room.
+    > go east
+    Observation: Kitchen.
+
+    think: Up to Attic for the knife.
+    > go up
+    Observation: Attic; a nasty-looking knife is here.
+
+    think: Take the knife.
+    > take nasty knife
+    Observation: Taken.
+
+    think: Head to Cyclops Room, then up to the Treasure Room.
+    > go down
+    Observation: Kitchen.
+
+    think: West to Living Room then west toward Cyclops Room shortcut.
+    > go west
+    Observation: Living Room.
+
+    think: Move west toward the breach.
+    > go west
+    Observation: Corridor toward Cyclops Room.
+
+    think: Continue west.
+    > go west
+    Observation: Cyclops Room.
+
+    think: Up to the Treasure Room where the Thief appears.
+    > go up
+    Observation: Treasure Room; the Thief lurks here.
+
+    think: Engage using the knife (better vs. Thief).
+    > attack thief with knife
+    Observation: After a struggle, the Thief collapses.
+
+    think: Collect treasures and opened egg/canary.
+    > take silver chalice
+    Observation: Taken.
+
+    think: Retrieve the egg and canary.
+    > take egg
+    Observation: An opened egg with a clockwork canary is taken.
+
+    think: Recover any stolen treasures.
+    > take all from thief
+    Observation: You gather valuables.
+
+    think: Return to Living Room to deposit.
+    > go down
+    Observation: Cyclops Room.
+
+    think: East toward the breach.
+    > go east
+    Observation: Passage to house.
+
+    think: East again to Living Room.
+    > go east
+    Observation: Living Room.
+
+    think: Turn off lamp to conserve.
+    > turn off lantern
+    Observation: The lantern goes dark.
+
+    think: Place the chalice first.
+    > put silver chalice in trophy case
+    Observation: Placed.
+
+    think: Extract the canary and store the egg.
+    > get canary from egg
+    Observation: You take the clockwork canary.
+
+    think: Store the egg shell as a treasure.
+    > put egg in trophy case
+    Observation: Placed.
+
+    think: Store any recovered treasures.
+    > put all in trophy case
+    Observation: You place additional valuables in the case.
+
+    think: Wind the canary at the forest path to obtain the bauble.
+    > go east
+    Observation: Kitchen.
+
+    think: East outside then north toward the path.
+    > go east
+    Observation: Behind House.
+
+    think: North.
+    > go north
+    Observation: Forest.
+
+    think: North again to the path.
+    > go north
+    Observation: Forest Path.
+
+    think: Wind the canary to attract the bauble.
+    > wind canary
+    Observation: A brass bauble drops nearby.
+
+    think: Take it and finish the set.
+    > take brass bauble
+    Observation: Taken.
+
+    think: Return and deposit final treasures.
+    > go south
+    Observation: Forest.
+
+    think: East to house exterior then inside via window.
+    > go east
+    Observation: Behind House.
+
+    think: Enter again.
+    > enter window
+    Observation: Kitchen.
+
+    think: West to Living Room.
+    > go west
+    Observation: Living Room.
+
+    think: Store canary and bauble.
+    > put canary in trophy case
+    Observation: Placed.
+
+    think: Final item.
+    > put brass bauble in trophy case
+    Observation: Placed.
+
+    think: Check the case for the parchment and progress to the Barrow to conclude.
+    > look at trophy case
+    Observation: An ancient parchment appears.
+
+    think: Read it to reveal the secret path.
+    > take parchment
+    Observation: Taken.
+
+    think: Learn the path forward.
+    > read parchment
+    Observation: It describes a secret way southwest of the house.
+
+    think: Head there now.
+    > go east
+    Observation: Kitchen.
+
+    think: Outside to the west side.
+    > go east
+    Observation: Behind House.
+
+    think: Circle to West of House.
+    > go south
+    Observation: West of House.
+
+    think: Find the secret path and enter the Barrow.
+    > go southwest
+    Observation: A hidden trail descends.
+
+    think: Finish the adventure by entering the Stone Barrow.
+    > enter barrow
+    Observation: You enter the Stone Barrow. Congratulations!
+"""
+
+ACTION = """ 
+You are playing Zork (text-based game) via accessing MCP tool
+
+* Goal *
+collect as many treasures as possible and putting them in the trophy case in the Living Room of the house.
+    The following is the list of treasures and their locations:
+    (1)Above Ground
+        - Jeweled egg
+    (2) Cellar and Maze
+        - Bag of coins
+        - Painting
+
+    (3) Dam and Reservoir
+        - Platinum bar
+        - Trunk of jewels
+        - Crystal trident
+
+    (4) Temple Area
+        - Ivory torch
+        - Gold coffin
+        - Sceptre
+        - Crystal skull
+
+    (5) Old Man River
+        - Emerald
+        - Scarab
+        - Pot of gold
+
+    (6) Coal Mine
+        - Jade figurine
+        - Sapphire bracelet
+        - Diamond
+
+    (7) Treasure Room and Barrow
+        - Silver chalice
+        - Clockwork canary
+        - Brass bauble
+
+** Previous result **
+    {tool_call_result_history}
+
+** Previous Thought **
+    {last_ai_message_result_content}
+
+** Instruction **
+    - Based on the previous result and previous thought, use the previous generated key and assign proper command to play zork
+
+** Important **
+    - Avoid repeating the same command multiple times in a row
+    - You must follow the ReAct Prompt, and think like ReAct Prompt
     
-(2) Troll Encounter and Maze Navigation 
-    Thought: Now in the Cellar. The priority is to drop the egg so the Thief can open it and prepare for the battle with the troll, which is North. I should save before this risky fight.
-    Action: drop egg
-    Observation: The egg is dropped. Go north. The troll appears.
+* Example Trajectory *
 
-    Thought: The troll is blocking the path. The solution guide states to attack repeatedly with the sword. I will save/restore as needed to survive this encounter.
-    Action: attack troll with sword
-    Observation: You succeed in killing the troll. Drop the sword to manage inventory limits and save again.
+(1) Above Ground
+    > open mailbox
+    Observation: The mailbox opens revealing a leaflet.
 
-    Thought: Troll defeated and path open. Now entering the Maze. The path is West, West, Up to get the key and coins. I must check my health condition after the fight.
-    Action: go west
-    Observation: Enter the Maze. Go west, west, and up. Save game.
+    > take leaflet
+    Observation: Taken.
 
-    Thought: I've reached the key/coins location. Get both, checking for wounds. Then the path is Southwest, East, South, and Southeast to the Cyclops Room.
-    Action: get bag of coins and skeleton key
-    Observation: Items obtained (or I must wait for healing if wounded). Go southwest, east, south, and southeast to the Cyclops Room.
+    > read leaflet
+    Observation: It welcomes you to Zork.
 
-    Thought: Now at the Cyclops Room. The preferred solution is to say "Odysseus" to scare him away, which opens a direct route back to the house.
-    Action: say "Odysseus"
-    Observation: The Cyclops is scared away, destroying the wall and opening a path.
+    > drop leaflet
+    Observation: Dropped.
 
-    Thought: Return to the Living Room via the new path (East twice). Once there, deposit the first treasure (coins) in the trophy case and drop non-essential items.
-    Action: go east
-    Observation: Go east again. Living Room. Open trophy case. Put coins in case. Drop key and bottle.
+    > go north
+    Observation: You are on a forest path near a large tree.
 
-(3) Dam and Reservoir Treasures
-    Thought: Next target is the Platinum Bar from the Loud Room. The easiest method is to simply type 'echo' there after navigating: Down, North, East 3 times.
-    Action: go down
-    Observation: Go north, east 3 times. Loud Room.
+    > climb tree
+    Observation: You see a bird's nest containing a jeweled egg.
 
-    Thought: I am in the Loud Room. Type 'echo' to trigger the bar's appearance. Then retrieve it and return to the Living Room (West 3 times, South, Up) to deposit the treasure.
-    Action: echo
-    Observation: The platinum bar appears. Get the platinum bar. Go west 3 times, south, and up. Living Room. Put platinum bar in trophy case.
+    > take egg
+    Observation: Taken.
 
-    Thought: Now to empty the Reservoir for the Trunk of Jewels. Path: Down, North, East 3 times, Up, East, North to Dam Lobby. Grab the matchbook.
-    Action: go down
-    Observation: Go north, east 3 times, up, east, and north. Dam Lobby. Get matchbook.
+    > open egg
+    Observation: It won't open.
 
-    Thought: Move to the Maintenance Room to push the yellow button and get tools. Then back to the Dam to use the wrench to turn the bolt.
-    Action: go north
-    Observation: Maintenance Room. Get wrench and screwdriver. Push yellow button. Go south twice to the Dam. Turn bolt with wrench. Drop wrench.
+    > go south
+    Observation: You are behind the white house. A small window is here.
 
-    Thought: Dam is open. Move to Reservoir South, wait two turns for it to empty, then go North to get the Trunk. Return path: South, Southwest, Southwest, West, South, Up.
-    Action: go west
-    Observation: Reservoir South. Wait two turns. Go north. Get trunk of jewels. Go south, southwest, southwest, west, south, up. Living Room. Put trunk in case.
+    > open window
+    Observation: The window opens.
 
-    Thought: Last treasure in this area is the Crystal Trident. Return to the Reservoir area, get the Air Pump, and proceed to the Atlantis Room for the Trident. Path: Down, North, East, North, Northeast, North.
-    Action: go down
-    Observation: Go north, east, north, northeast, and north. Go north again to Reservoir North. Get air pump. Go north again to Atlantis Room. Get crystal trident.
+    > enter window
+    Observation: You are in the kitchen.
 
-    Thought: Now, return to the Living Room to deposit the Trident: Up, North, North, West, Down (Slide Room to Cellar), Up (to Living Room).
-    Action: go up
-    Observation: Go north, north, west, then down from Slide Room to Cellar. Go up. Living Room. Put trident in case.
+    > take sack
+    Observation: Taken.
 
-(4) Temple Area and Hades Treasures
-    Thought: Need rope from the Attic to access the Torch Room. Path: East, Up, grab rope, then Down, West, Down to Cellar. Then North, East twice, Southeast, East to Dome Room.
-    Action: go east
-    Observation: Go up to the Attic. Get rope. Go down, west, and down to the Cellar. Go north, east 2 times, southeast, and east. Dome Room.
+    > open sack
+    Observation: Inside are a lunch and a clove of garlic.
 
-    Thought: Tie the rope and descend. In the Torch Room, get the torch and turn off the lamp to conserve it. Proceed South to the Temple.
-    Action: tie rope to railing
-    Observation: Go down to the Torch Room. Get torch. Turn off lamp. Go south to the Temple. Drop all non-essential items (except torch).
+    > take garlic
+    Observation: Taken.
 
-    Thought: Save due to Grue risk. Now go East to the Egyptian Room, get the coffin and sceptre. Then return West, South to Altar and 'pray' to teleport back to the surface to deposit the treasures.
-    Action: save game
-    Observation: Go east. Egyptian Room. Get coffin. Open coffin. Take sceptre. Go west, then south to Altar. Pray.
+    > take bottle
+    Observation: Taken.
 
-    Thought: Teleported to Forest. Path back to house: East, South, East, In to Kitchen, West to Living Room. Deposit the coffin and sceptre. Then return to the Temple to continue the ritual.
-    Action: go east
-    Observation: Go south, east, in (Kitchen), west (Living Room). Put coffin and sceptre in case. Go down, north, east, east, southeast, east, down, south to Temple. Get items.
+    > go west
+    Observation: You are in the Living Room: a rug, a sword, a brass lantern, and a closed trap door are here.
 
-    Thought: Back at the Temple, get the bell, candles, matchbook, and black book. The ritual for the Skull: Put out candles, check inventory (only ritual items), go Down twice to Entrance to Hades. Ring Bell.
-    Action: get matchbook
-    Observation: Get bell, candles, black book. Put out candles. Go down 2 times. Entrance to Hades. Ring bell.
+    > take sword
+    Observation: Taken.
 
-    Thought: Now, re-light the candles, read the book, and extinguish the candles. Then, proceed South to the Land of the Dead to get the skull.
-    Action: get candles
-    Observation: Light a match. Light candles. Read book. Put out candles. Drop book. Go south. Land of the Dead. Get crystal skull.
+    > take lantern
+    Observation: Taken.
 
-    Thought: Skull acquired. Return to the Living Room to deposit the skull, and re-acquire the sceptre for the next section. Path: North, Up, North 3 times, West 2 times, South, Up.
-    Action: go north
-    Observation: Go up, north 3 times, west 2 times, south, and up. Living Room. Put skull in case. Get sceptre. Return to Temple to collect belongings.
+    > move rug
+    Observation: A closed trap door is revealed.
 
-(5) Old Man River and Pot of Gold
-    Thought: Prepare for the boat journey. Path: South, Down, North 3 times, East, Up, East twice to Dam Base. Inflate the raft with the Air Pump and drop the pump.
-    Action: go south
-    Observation: Go down, north 3 times, east, up, east 2 times. Dam Base. Inflate pile of plastic with air pump. Drop pump. Read label. Drop label.
+    > open trap door
+    Observation: Opened.
 
-    Thought: Put sharp items (screwdriver, sceptre) into the sack to avoid puncturing the raft. Get in the boat and launch. Wait four turns to drift.
-    Action: put screwdriver in sack
-    Observation: Put sceptre in sack. Get in boat. Launch. Wait four turns. Red buoy appears.
+    > turn on lantern
+    Observation: The lantern is now on.
 
-    Thought: Grab the red buoy. The boat lands at Sandy Beach. Open the buoy for the emerald, then drop it. Grab the shovel.
-    Action: get red buoy
-    Observation: Sandy Beach. Stand up. Open buoy. Take emerald. Drop buoy. Get shovel.
+    > go down
+    Observation: You are in the Cellar.
 
-    Thought: Dig in the Sandy Cave four times for the scarab. Then return to the beach.
-    Action: go northeast
-    Observation: Sandy Cave. Dig in sand with shovel four times. Drop shovel and take the scarab. Go southwest. Sandy Beach.
+(2) Cellar & Maze
+    > drop egg
+    Observation: Dropped.
 
-    Thought: If I have the sceptre, go South twice to Aragain Falls and wave it to cross the rainbow (West twice). If not, take the boat back to the west bank. Assuming I have it.
-    Action: go south
-    Observation: Go south again. Aragain Falls. Wave sceptre. Go west twice across the rainbow.
+    > go north
+    Observation: A troll bars the way.
 
-    Thought: Too much weight for the pot of gold now. Deposit the scarab, emerald, and sceptre in the case first. Path: Southwest, Up, Up, Northwest, West twice to Living Room.
-    Action: go southwest
-    Observation: Go up, up, northwest, west 2 times. Living Room. Put scarab, emerald, and sceptre in case.
+    > attack troll with sword
+    Observation: You wound the troll.
 
-    Thought: Now go back for the Pot of Gold. Path: East 4 times to Canyon View, then Down twice to End of Rainbow. Pick up the pot of gold (if the Thief hasn't stolen it).
-    Action: go east
-    Observation: Go east 3 times. Canyon View. Go down 2 times. End of Rainbow. Get pot of gold.
+    > attack troll with sword
+    Observation: The troll falls dead.
 
-    Thought: Return to the Living Room and deposit the final treasure from this section. Path: Southwest, Up, Up, Northwest, West 3 times.
-    Action: go southwest
-    Observation: Go up, up, northwest, west 3 times. Living Room. Put pot of gold in case.
+    > drop sword
+    Observation: Dropped.
 
-(6) Coal Mine, Final Treasures, and Ending
-    Thought: Time for the Coal Mine. Take the garlic out of the sack for the bat. Path: Down, North, East twice, South twice to the South Mirror Room. Touch the mirror to teleport.
-    Action: take garlic out of sack
-    Observation: Go down, north, east 2 times, south 2 times. South Mirror Room. Touch mirror.
+    > go west
+    Observation: A maze of twisty passages.
 
-    Thought: Now in the North Mirror Room. Path: North, West, North, West, North to the Bat Room. The garlic should keep the bat at bay so I can get the jade figurine.
-    Action: go north
-    Observation: Go west, north, west, north. Bat Room. Get jade figurine (bat is holding his nose). Go east to Shaft Room.
+    > go west
+    Observation: Another twisty passage.
 
-    Thought: Place non-flammable items and light sources in the basket to prepare for the Gas Room. I'll use the candles for the coal puzzle. Switch to the lantern.
-    Action: put candles in basket
-    Observation: Put screwdriver in basket. Drop torch. Turn on lantern.
+    > go up
+    Observation: You see a bag of coins and a skeleton key.
 
-    Thought: Now, collect the bracelet and coal. Path: North, Down to Gas Room (bracelet), then East, Northeast, Southeast, Southwest, Down twice to Ladder Bottom (coal).
-    Action: go north
-    Observation: Go down. Gas Room. Get bracelet. Go east, northeast, southeast, southwest, down 2 times. Ladder Bottom. Go south. Get coal.
+    > take bag of coins
+    Observation: Taken.
 
-    Thought: Return to the Shaft Room, load the coal, and the lit candles into the basket to ignite it. Path: North, Up twice, North, East, South, North, Up, South to Shaft Room.
-    Action: go north
-    Observation: Go up 2 times, north, east, south, north, up, south. Shaft Room. Put coal in basket. Get candles, light match, light candles, put candles in basket.
+    > take skeleton key
+    Observation: Taken.
 
-    Thought: Lower the basket and return to the Timber Room to retrieve the processed coal (now diamond) and tools. Path: North, Down, East, Northeast, Southeast, Southwest, Down twice to Ladder Bottom. Go west twice to Drafty Room.
-    Action: lower basket
-    Observation: Go north, down, east, northeast, southeast, southwest, down 2 times. Ladder Bottom. Go west. Timber Room. Drop items. Go west. Drafty Room.
+    > go southwest
+    Observation: Narrow tunnels.
 
-    Thought: Get the coal (now diamond), screwdriver, and candles. Use the screwdriver to turn the switch on the machine in the Machine Room, which turns the coal into a diamond. Drop the screwdriver.
-    Action: get coal
-    Observation: Get screwdriver and candles from basket. Go south. Machine Room. Open machine, put coal inside, close it. Turn switch with screwdriver. Open machine. Get diamond. Drop screwdriver.
+    > go east
+    Observation: Cyclops Room; a cyclops glowers at you.
 
-    Thought: Return the diamond and candles to the Shaft Room, then raise the basket and retrieve them. Path: North, East, pick up items, and return to Shaft Room.
-    Action: go north
-    Observation: Put candles and diamond in basket. Go east. Pick up items (except timber). Return to Shaft Room. Raise basket. Take diamond and candles. Put out candles. Get torch.
+    > say "Odysseus"
+    Observation: The cyclops flees, smashing a hole in the wall.
 
-    Thought: Return to the Living Room to deposit all new treasures: Down, North, East, South, Down to Cellar, Up to Living Room. Deposit diamond, bracelet, figurine, and torch (if retrieved). Drop garlic/candles.
-    Action: go west
-    Observation: Go south, east, south, down. Cellar. Go up. Living Room. Put diamond, bracelet, figurine, and torch in case. Drop garlic and candles.
+    > go east
+    Observation: You are back in the Living Room.
 
-    Thought: Final confrontation. Get the nasty knife from the Attic. Go to the Cyclops Room (via West twice or through the Maze), and then Up to the Treasure Room to find and attack the Thief.
-    Action: go east
-    Observation: Go up. Attic. Pick up nasty-looking knife. Return down and west. Go west 2 times (or Maze route) to Cyclops Room. Go up. Treasure Room. Attack Thief with nasty knife.
+    > open trophy case
+    Observation: Opened.
 
-    Thought: Thief defeated. Collect the silver chalice, the opened egg (now with the canary), and any stolen treasures. Return to the Living Room and deposit them, winding the canary outside for the brass bauble.
-    Action: take silver chalice
-    Observation: Take opened egg/canary. Take stolen treasures. Return to Living Room. Turn off lamp. Put chalice in case. Get canary from egg. Put egg in case. Put stolen treasures in case. Go east 2 times, north 2 times. Forest Path. Wind canary. Get brass bauble. Return to Living Room. Put canary and bauble in case.
+    > put bag of coins in trophy case
+    Observation: Placed.
 
-    Thought: Check if all treasures are in the case. The final goal is the Stone Barrow. Check the trophy case for the parchment, read it, and follow the secret path it reveals.
-    Action: look at trophy case
-    Observation: An "ancient parchment" appears. Take it and look at it. Go east 2 times, south, and west to West of House. Go southwest (down the "secret path") then enter the Stone Barrow to the west.
+    > go down
+    Observation: Cellar.
+
+    > go south
+    Observation: A corridor continues east.
+
+    > go east
+    Observation: The Gallery; a painting hangs here.
+
+    > take painting
+    Observation: Taken.
+
+    > go west
+    Observation: Corridor.
+
+    > go north
+    Observation: Cellar.
+
+    > go up
+    Observation: Living Room.
+
+    > put painting in trophy case
+    Observation: Placed.
+
+(3) Dam & Reservoir
+    > go down
+    Observation: Cellar.
+
+    > go north
+    Observation: Corridor.
+
+    > go east
+    Observation: Passage.
+
+    > go east
+    Observation: Passage.
+
+    > go east
+    Observation: The noise is overwhelming.
+
+    > echo
+    Observation: The room quiets; a platinum bar is visible.
+
+    > take platinum bar
+    Observation: Taken.
+
+    > go west
+    Observation: Passage.
+
+    > go west
+    Observation: Passage.
+
+    > go west
+    Observation: Corridor.
+
+    > go south
+    Observation: Cellar.
+
+    > go up
+    Observation: Living Room.
+
+    > put platinum bar in trophy case
+    Observation: Placed.
+
+    > go down
+    Observation: Cellar.
+
+    > go north
+    Observation: Corridor.
+
+    > go east
+    Observation: Passage.
+
+    > go east
+    Observation: Passage.
+
+    > go up
+    Observation: You are near the dam.
+
+    > go east
+    Observation: A corridor slopes slightly.
+
+    > go north
+    Observation: Dam Lobby; a matchbook lies here.
+
+    > take matchbook
+    Observation: Taken.
+
+    > go east
+    Observation: Maintenance Room; a wrench and a screwdriver are here. A yellow button is on the wall.
+
+    > take wrench
+    Observation: Taken.
+
+    > take screwdriver
+    Observation: Taken.
+
+    > push yellow button
+    Observation: You hear a distant metallic click.
+
+    > go south
+    Observation: Corridor.
+
+    > go south
+    Observation: At the dam; a bolt is accessible.
+
+    > turn bolt with wrench
+    Observation: The spillway opens; water begins to drain.
+
+    > drop wrench
+    Observation: Dropped.
+
+    > wait
+    Observation: Time passes; the water level drops.
+
+    > go west
+    Observation: Reservoir South; water is low.
+
+    > go north
+    Observation: Reservoir Floor; a trunk of jewels rests here.
+
+    > take trunk of jewels
+    Observation: Taken (heavy).
+
+    > go south
+    Observation: Reservoir South.
+
+    > go southwest
+    Observation: Narrow ledge passage.
+
+    > go southwest
+    Observation: Tunnel slopes upward.
+
+    > go west
+    Observation: Passage.
+
+    > go south
+    Observation: Corridor.
+
+    > go up
+    Observation: Living Room.
+
+    > put trunk of jewels in trophy case
+    Observation: Placed.
+
+    > go down
+    Observation: Cellar.
+
+    > go north
+    Observation: Corridor.
+
+    > go east
+    Observation: Passage.
+
+    > go north
+    Observation: A slippery tunnel.
+
+    > go northeast
+    Observation: Damp cavern.
+
+    > go north
+    Observation: Reservoir North; an air pump is here.
+
+    > take air pump
+    Observation: Taken.
+
+    > go north
+    Observation: Atlantis Room; the crystal trident gleams here.
+
+    > take crystal trident
+    Observation: Taken.
+
+    > go up
+    Observation: Sloping room above.
+
+    > go north
+    Observation: Slide Room; a chute leads down.
+
+    > go down
+    Observation: You slide into the Cellar.
+
+    > go up
+    Observation: Living Room.
+
+    > put crystal trident in trophy case
+    Observation: Placed.
+    
+(4) Temple Area & Hades
+    > go east
+    Observation: Kitchen.
+
+    > go up
+    Observation: Attic; a coil of rope lies here.
+
+    > take rope
+    Observation: Taken.
+
+    > go down
+    Observation: Kitchen.
+
+    > go west
+    Observation: Living Room.
+
+    > go down
+    Observation: Cellar.
+
+    > go north
+    Observation: Corridor.
+
+    > go east
+    Observation: Passage.
+
+    > go east
+    Observation: Passage.
+
+    > go southeast
+    Observation: A circular chamber.
+
+    > go east
+    Observation: Dome Room; a railing overlooks a dark drop.
+
+    > tie rope to railing
+    Observation: The rope dangles below.
+
+    > go down
+    Observation: Torch Room; an ivory torch rests here.
+
+    > take torch
+    Observation: Taken.
+
+    > turn off lantern
+    Observation: Lantern off.
+
+    > go south
+    Observation: Temple; an altar is here.
+
+    > go east
+    Observation: Egyptian Room; a heavy coffin sits here.
+
+    > take coffin
+    Observation: Taken (heavy).
+
+    > open coffin
+    Observation: Inside is a sceptre.
+
+    > take sceptre
+    Observation: Taken.
+
+    > go west
+    Observation: Temple.
+
+    > go south
+    Observation: Altar Room.
+
+    > pray
+    Observation: You are teleported to a forest location.
+
+    > go east
+    Observation: Forest path.
+
+    > go south
+    Observation: Near the house.
+
+    > go east
+    Observation: Behind House.
+
+    > enter window
+    Observation: Kitchen.
+
+    > go west
+    Observation: Living Room.
+
+    > put coffin in trophy case
+    Observation: Placed.
+
+    > put sceptre in trophy case
+    Observation: Placed.
+
+    > go down
+    Observation: Cellar.
+
+    > go north
+    Observation: Corridor.
+
+    > go east
+    Observation: Passage.
+
+    > go east
+    Observation: Passage.
+
+    > go southeast
+    Observation: Circular chamber.
+
+    > go east
+    Observation: Dome Room with the rope.
+
+    > go down
+    Observation: Torch Room.
+
+    > go south
+    Observation: Temple.
+
+    > take bell
+    Observation: Taken.
+
+    > open matchbook
+    Observation: Matchbook opened.
+
+    > take candles
+    Observation: Taken.
+
+    > take black book
+    Observation: Taken.
+
+    > go south
+    Observation: Altar Room.
+
+    > go down
+    Observation: Stairs descend into gloom.
+
+    > go down
+    Observation: Entrance to Hades.
+
+    > ring bell
+    Observation: A chill wind blows; you drop the bell and candles.
+
+    > get candles
+    Observation: Taken.
+
+    > light match
+    Observation: The match flares.
+
+    > light candles
+    Observation: The candles burn with a steady flame.
+
+    > read book
+    Observation: Spectral forms rise and fade; a passage opens to the south.
+
+    > put out candles
+    Observation: Extinguished.
+
+    > drop black book
+    Observation: Dropped.
+
+    > go south
+    Observation: Land of the Dead; a crystal skull rests here.
+
+    > take crystal skull
+    Observation: Taken.
+
+    > go north
+    Observation: Entrance to Hades.
+
+    > go up
+    Observation: Stairway.
+
+    > go up
+    Observation: Altar Room.
+
+    > go west
+    Observation: Temple.
+
+    > go west
+    Observation: Torch Room/Dome area.
+
+    > go up
+    Observation: Dome Room.
+
+    > go west
+    Observation: Circular chamber.
+
+    > go northwest
+    Observation: Passage.
+
+    > go west
+    Observation: Corridor.
+
+    > go south
+    Observation: Cellar.
+
+    > go up
+    Observation: Living Room.
+
+    > put crystal skull in trophy case
+    Observation: Placed.
+
+(5) Old Man River
+    > go south
+    Observation: You leave the Living Room.
+
+    > go down
+    Observation: Cellar.
+
+    > go north
+    Observation: Corridor.
+
+    > go east
+    Observation: Passage.
+
+    > go north
+    Observation: Damp tunnel.
+
+    > go east
+    Observation: Narrow ledge.
+
+    > go up
+    Observation: Near base of the dam.
+
+    > go east
+    Observation: Dam Base; a pile of plastic lies here.
+
+    > inflate pile with air pump
+    Observation: The raft inflates.
+
+    > put screwdriver in sack
+    Observation: Done.
+
+    > put sceptre in sack
+    Observation: Done.
+
+    > get in boat
+    Observation: You climb into the raft.
+
+    > launch
+    Observation: The current carries you away.
+
+    > wait
+    Observation: You float past rocky banks.
+
+    > wait
+    Observation: The river bends.
+
+    > wait
+    Observation: A red buoy appears nearby.
+
+    > get buoy
+    Observation: Taken.
+
+    > go east
+    Observation: Sandy Beach; the raft beaches.
+
+    > stand
+    Observation: You stand on the sand.
+
+    > open buoy
+    Observation: Inside is an emerald.
+
+    > take emerald
+    Observation: Taken.
+
+    > drop buoy
+    Observation: Dropped.
+
+    > take shovel
+    Observation: Taken.
+
+    > go northeast
+    Observation: Sandy Cave.
+
+    > dig sand
+    Observation: You dig a hole.
+
+    > dig sand
+    Observation: You uncover a small object.
+
+    > dig sand
+    Observation: You see the outline of a trinket.
+
+    > dig sand
+    Observation: A scarab is exposed.
+
+    > take scarab
+    Observation: Taken.
+
+    > go southwest
+    Observation: Sandy Beach.
+
+    > go south
+    Observation: River narrows.
+
+    > go south
+    Observation: Aragain Falls; mist and a rainbow arc.
+
+    > wave sceptre
+    Observation: A rainbow bridge forms to the west.
+
+    > go west
+    Observation: A colorful span.
+
+    > go west
+    Observation: End of Rainbow; a pot of gold gleams here.
+
+    > take pot of gold
+    Observation: Taken.
+
+    > go southwest
+    Observation: Canyon trail.
+
+    > go up
+    Observation: Steep path.
+
+    > go up
+    Observation: Forest edge.
+
+    > go northwest
+    Observation: Behind the house.
+
+    > enter window
+    Observation: Kitchen.
+
+    > go west
+    Observation: Living Room.
+
+    > put emerald in trophy case
+    Observation: Placed.
+
+    > put scarab in trophy case
+    Observation: Placed.
+
+    > put sceptre in trophy case
+    Observation: Placed.
+
+    > put pot of gold in trophy case
+    Observation: Placed.
+
+(6) Coal Mine
+    > take garlic out of sack
+    Observation: Taken.
+
+    > go down
+    Observation: Cellar.
+
+    > go north
+    Observation: Corridor.
+
+    > go east
+    Observation: Passage.
+
+    > go east
+    Observation: Passage.
+
+    > go south
+    Observation: Stone hall.
+
+    > go south
+    Observation: South Mirror Room; a mirror spans the wall.
+
+    > touch mirror
+    Observation: You are in the North Mirror Room.
+
+    > go north
+    Observation: Tunnel.
+
+    > go west
+    Observation: Junction.
+
+    > go north
+    Observation: Cavern.
+
+    > go west
+    Observation: Bat Room; the bat avoids you, holding its nose.
+
+    > take jade figurine
+    Observation: Taken.
+
+    > go east
+    Observation: Shaft Room; a basket hangs from a chain.
+
+    > put candles in basket
+    Observation: Done.
+
+    > put screwdriver in basket
+    Observation: Done.
+
+    > drop torch
+    Observation: Dropped.
+
+    > turn on lantern
+    Observation: Lantern on.
+
+    > go north
+    Observation: Narrow tunnel.
+
+    > go down
+    Observation: Gas Room; a bracelet lies here.
+
+    > take bracelet
+    Observation: Taken.
+
+    > go east
+    Observation: Passage.
+
+    > go northeast
+    Observation: Passage.
+
+    > go southeast
+    Observation: Timbered tunnel.
+
+    > go southwest
+    Observation: Ladder shaft.
+
+    > go down
+    Observation: Ladder.
+
+    > go down
+    Observation: Ladder Bottom; a pile of coal is here.
+
+    > take coal
+    Observation: Taken.
+
+    > go north
+    Observation: Ladder shaft.
+
+    > go up
+    Observation: Ladder.
+
+    > go up
+    Observation: Shaft above.
+
+    > go north
+    Observation: Passage.
+
+    > go east
+    Observation: Junction.
+
+    > go south
+    Observation: Passage.
+
+    > go north
+    Observation: Passage.
+
+    > go up
+    Observation: Shaft Room; basket hangs here.
+
+    > put coal in basket
+    Observation: Done.
+
+    > get candles
+    Observation: Taken.
+
+    > light match
+    Observation: Lit.
+
+    > light candles
+    Observation: Candles burn.
+
+    > put candles in basket
+    Observation: Done.
+
+    > lower basket
+    Observation: The basket descends out of sight.
+
+    > go north
+    Observation: Passage.
+
+    > go down
+    Observation: Sloping tunnel.
+
+    > go east
+    Observation: Timber Room.
+
+    > go northeast
+    Observation: Side chamber.
+
+    > go southeast
+    Observation: Narrow way.
+
+    > go southwest
+    Observation: Ladder area.
+
+    > go down
+    Observation: Ladder.
+
+    > go down
+    Observation: Ladder Bottom.
+
+    > go west
+    Observation: Timber Room.
+
+    > go west
+    Observation: Drafty Room; the basket is accessible.
+
+    > get coal
+    Observation: Taken from basket.
+
+    > get screwdriver
+    Observation: Taken.
+
+    > get candles
+    Observation: Taken.
+
+    > go south
+    Observation: Machine Room; a machine with a switch is here.
+
+    > open machine
+    Observation: The machine opens.
+
+    > put coal in machine
+    Observation: Inside.
+
+    > close machine
+    Observation: Closed.
+
+    > turn switch with screwdriver
+    Observation: The machine hums, then stops.
+
+    > open machine
+    Observation: Inside is a glittering diamond.
+
+    > take diamond
+    Observation: Taken.
+
+    > drop screwdriver
+    Observation: Dropped.
+
+    > go north
+    Observation: Drafty Room.
+
+    > go east
+    Observation: Timber Room.
+
+    > go east
+    Observation: Passage.
+
+    > go up
+    Observation: Tunnel rises.
+
+    > go up
+    Observation: Shaft Room.
+
+    > raise basket
+    Observation: The basket rises into view.
+
+    > get candles
+    Observation: Taken.
+
+    > put out candles
+    Observation: Extinguished.
+
+    > go west
+    Observation: Tunnel.
+
+    > go south
+    Observation: Passage.
+
+    > go east
+    Observation: Passage.
+
+    > go south
+    Observation: Cellar stairs.
+
+    > go up
+    Observation: Living Room.
+
+    > put diamond in trophy case
+    Observation: Placed.
+
+    > put bracelet in trophy case
+    Observation: Placed.
+
+    > put jade figurine in trophy case
+    Observation: Placed.
+
+(7) Treasure Room & Barrow
+    > go east
+    Observation: Kitchen.
+
+    > go up
+    Observation: Attic; a nasty-looking knife is here.
+
+    > take nasty knife
+    Observation: Taken.
+
+    > go down
+    Observation: Kitchen.
+
+    > go west
+    Observation: Living Room.
+
+    > go west
+    Observation: Corridor toward Cyclops Room.
+
+    > go west
+    Observation: Cyclops Room.
+
+    > go up
+    Observation: Treasure Room; the Thief lurks here.
+
+    > attack thief with knife
+    Observation: After a struggle, the Thief collapses.
+
+    > take silver chalice
+    Observation: Taken.
+
+    > take egg
+    Observation: An opened egg with a clockwork canary is taken.
+
+    > take all from thief
+    Observation: You gather valuables.
+
+    > go down
+    Observation: Cyclops Room.
+
+    > go east
+    Observation: Passage to house.
+
+    > go east
+    Observation: Living Room.
+
+    > turn off lantern
+    Observation: The lantern goes dark.
+
+    > put silver chalice in trophy case
+    Observation: Placed.
+
+    > get canary from egg
+    Observation: You take the clockwork canary.
+
+    > put egg in trophy case
+    Observation: Placed.
+
+    > put all in trophy case
+    Observation: You place additional valuables in the case.
+
+    > go east
+    Observation: Kitchen.
+
+    > go east
+    Observation: Behind House.
+
+    > go north
+    Observation: Forest.
+
+    > go north
+    Observation: Forest Path.
+
+    > wind canary
+    Observation: A brass bauble drops nearby.
+
+    > take brass bauble
+    Observation: Taken.
+
+    > go south
+    Observation: Forest.
+
+    > go east
+    Observation: Behind House.
+
+    > enter window
+    Observation: Kitchen.
+
+    > go west
+    Observation: Living Room.
+
+    > put canary in trophy case
+    Observation: Placed.
+
+    > put brass bauble in trophy case
+    Observation: Placed.
+
+    > look at trophy case
+    Observation: An ancient parchment appears.
+
+    > take parchment
+    Observation: Taken.
+
+    > read parchment
+    Observation: It describes a secret way southwest of the house.
+
+    > go east
+    Observation: Kitchen.
+
+    > go east
+    Observation: Behind House.
+
+    > go south
+    Observation: West of House.
+
+    > go southwest
+    Observation: A hidden trail descends.
+
+    > enter barrow
+    Observation: You enter the Stone Barrow. Congratulations!
 """

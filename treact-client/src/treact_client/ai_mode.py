@@ -5,3 +5,4 @@ class AIMode(Enum):
     STANDARD = "Standard"
     REACT = "ReAct"
     TREACT = "TReAct"
+    ACTION = "Action"

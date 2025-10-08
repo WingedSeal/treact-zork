@@ -41,7 +41,8 @@ mcp = FastMCP(
 @mcp.tool(name="gen-key")
 def gen_key(game_name: str) -> dict:
     """
-    Generate a new Session with a new key to access for the given game. Use this tool one time.
+    Generate a new Session with a new key to access for the given game.
+    Do not use when the game is already running and already has a session key.
 
     Arguments:
         game: str: The game to start a new session
