@@ -42,7 +42,7 @@ build-backend = "poetry.core.masonry.api"
 dev = [
     "mypy (>=1.18.2,<2.0.0)",
     "black (>=25.9.0,<26.0.0)",
-    "types-tqdm (>=4.67.0.20250809,<5.0.0.0)"
+    "types-tqdm (>=4.67.0.20250809,<5.0.0.0)",
 ]
 
 [tool.mypy]

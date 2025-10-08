@@ -1,9 +1,12 @@
 import argparse
 from pathlib import Path
+from time import perf_counter
 
+start = perf_counter()
+print("Importing treact_client")
 from treact_client import run_client_file
 
-print("Running 'main.py'")
+print(f"Import completed in {perf_counter()-start:2f}s")
 
 
 def standard_client() -> None:
