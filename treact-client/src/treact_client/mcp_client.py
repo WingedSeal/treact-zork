@@ -1,12 +1,14 @@
+import asyncio
 import logging
 import os
 import time
 from contextlib import AsyncExitStack
+from pathlib import Path
+from pprint import pformat
 from typing import Hashable, Literal, cast
 
 import orjson
 import requests
-from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessageChunk, BaseMessageChunk, SystemMessage
 from langchain_core.messages import ToolCall as LangChainToolCall
 from langchain_core.prompts import ChatPromptTemplate
@@ -25,14 +27,21 @@ from mcp.client.streamable_http import streamablehttp_client
 from mcp.types import TextContent
 from requests.exceptions import ConnectionError, HTTPError, Timeout
 from tqdm import tqdm
-from pprint import pformat
+
+from treact_client.client_toml import parse_toml_config
 
 from . import prompt_template
 from .ai_model_response import AIModelResponse
 from .csv_logger import CSVLogger
+from .exceptions import (
+    InvalidToolCallResultException,
+    MaxBranchPerNodeExceededException,
+    NoSessionException,
+    UnreachableServerException,
+)
 from .load_env import env
 from .log import get_logger
-from .state import ModelSettings, StateUpdate, State
+from .state import ModelSettings, State, StateUpdate
 from .tool_call import (
     ToolCall,
     ToolCallResult,
@@ -40,29 +49,9 @@ from .tool_call import (
     ToolCallResultNodeUpdate,
     ToolServerResponse,
 )
-from .exceptions import (
-    MaxBranchPerNodeExceededException,
-    NoSessionException,
-    UnreachableServerException,
-    InvalidToolCallResultException,
-)
 
 logger = get_logger(__name__)
 
-
-if env.API_KEY:
-    os.environ["GOOGLE_API_KEY"] = env.API_KEY
-    model = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
-        temperature=0.6,
-        # max_output_tokens=8000,
-        include_thoughts=True,
-        thinking_budget=1024,
-    )
-else:
-    model = ChatOllama(model="qwen3:8b", temperature=0)
-    # model = ChatOllama(model="gpt-oss:20b", temperature=0)
-    # model = ChatOllama(model="llama3.1:latest", temperature=0)
 
 MCP_SERVER_URL = f"http://{env.SERVER_IP}:{env.SERVER_PORT}/mcp"
 
@@ -84,7 +73,7 @@ class MCPClient:
 
     def is_server_up(self, url: str) -> bool:
         try:
-            response = requests.get(url, timeout=3)
+            response = requests.get(url, timeout=5)
         except (ConnectionError, Timeout, HTTPError):
             return False
         return response.status_code % 100 != 5
@@ -387,6 +376,21 @@ async def run_client(
     config: RunnableConfig,
 ) -> None:
     logging.info(f"Running MCP-Client: {client_name}")
+    if env.API_KEY:
+        logging.info(f"API_KEY found. Using Gemini.")
+        os.environ["GOOGLE_API_KEY"] = env.API_KEY
+        model = ChatGoogleGenerativeAI(
+            model="gemini-2.5-flash",
+            temperature=0.6,
+            # max_output_tokens=8000,
+            include_thoughts=True,
+            thinking_budget=1024,
+        )
+    else:
+        logging.info(f"API_KEY not found. Using Ollama.")
+        model = ChatOllama(model="qwen3:8b", temperature=0)
+        # model = ChatOllama(model="gpt-oss:20b", temperature=0)
+        # model = ChatOllama(model="llama3.1:latest", temperature=0)
     client = MCPClient()
     await client.connect_to_server(MCP_SERVER_URL)
     csv = CSVLogger(model, client_name)
@@ -407,3 +411,7 @@ async def run_client(
         csv.add_result_state(result_state)
 
     await client.cleanup()
+
+
+def run_client_file(toml_path: Path) -> None:
+    asyncio.run(run_client(**parse_toml_config(toml_path)))

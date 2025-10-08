@@ -1,0 +1,14 @@
+[client]
+name = "TReAct"
+prompt_template = "./treact-template.txt"
+game_name = "zork1"
+maximum_step = 250
+missing_tool_call_threshold = 5
+history_max_length = 10
+max_branch_per_node = 3
+
+[config]
+recursion_limit = 1200
+
+[execute]
+iterations = 10

@@ -1,67 +1,37 @@
-import asyncio
+import argparse
+from pathlib import Path
 
-from treact_client import prompt_template, run_client
+from treact_client import run_client_file
+
+print("Running 'main.py'")
 
 
 def standard_client() -> None:
-    asyncio.run(
-        run_client(
-            "Standard",
-            prompt_template=prompt_template.STANDARD,
-            game_name="zork1",
-            maximum_step=250,
-            missing_tool_call_threshold=5,
-            history_max_length=10,
-            max_branch_per_node=1,
-            iterations=10,
-            config={"recursion_limit": 1200},
-        )
-    )
+    run_client_file(Path("./clients/standard.toml"))
 
 
 def react_client() -> None:
-    asyncio.run(
-        run_client(
-            "React",
-            prompt_template=prompt_template.REACT,
-            game_name="zork1",
-            maximum_step=250,
-            missing_tool_call_threshold=5,
-            history_max_length=10,
-            max_branch_per_node=1,
-            iterations=10,
-            config={"recursion_limit": 1200},
-        )
-    )
+    run_client_file(Path("./clients/react.toml"))
 
 
 def action_client() -> None:
-    asyncio.run(
-        run_client(
-            "Action",
-            prompt_template=prompt_template.ACTION,
-            game_name="zork1",
-            maximum_step=250,
-            missing_tool_call_threshold=5,
-            history_max_length=10,
-            max_branch_per_node=1,
-            iterations=10,
-            config={"recursion_limit": 1200},
-        )
-    )
+    run_client_file(Path("./clients/action.toml"))
 
 
 def treact_client() -> None:
-    asyncio.run(
-        run_client(
-            "Action",
-            prompt_template=prompt_template.TREACT,
-            game_name="zork1",
-            maximum_step=250,
-            missing_tool_call_threshold=5,
-            history_max_length=10,
-            max_branch_per_node=3,
-            iterations=10,
-            config={"recursion_limit": 1200},
-        )
+    run_client_file(Path("./clients/treact.toml"))
+
+
+def custom_client() -> None:
+    parser = argparse.ArgumentParser(
+        description="Run MCP-Client with a configuration file"
     )
+    parser.add_argument(
+        "config_file",
+        nargs="?",
+        default="client.toml",
+        help="Path to the configuration file (default: client.toml)",
+    )
+    args = parser.parse_args()
+    config_path = Path(args.config_file)
+    run_client_file(config_path)

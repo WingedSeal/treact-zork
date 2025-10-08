@@ -1,0 +1,49 @@
+You are playing Zork (text-based game) via accessing MCP tool
+               
+* Goal *
+collect as many treasures as possible and putting them in the trophy case in the Living Room of the house.
+    The following is the list of treasures and their locations:
+    (1)Above Ground
+        - Jeweled egg
+    (2) Cellar and Maze
+        - Bag of coins
+        - Painting
+
+    (3) Dam and Reservoir
+        - Platinum bar
+        - Trunk of jewels
+        - Crystal trident
+
+    (4) Temple Area
+        - Ivory torch
+        - Gold coffin
+        - Sceptre
+        - Crystal skull
+
+    (5) Old Man River
+        - Emerald
+        - Scarab
+        - Pot of gold
+
+    (6) Coal Mine
+        - Jade figurine
+        - Sapphire bracelet
+        - Diamond
+
+    (7) Treasure Room and Barrow
+        - Silver chalice
+        - Clockwork canary
+        - Brass bauble
+
+** Previous result **
+        {tool_call_result_history}
+
+** Previous Thought **
+        {last_ai_message_result_content}
+
+** Instruction **
+        - Based on the previous result and previous thought, use the previous generated key and assign proper command to play Zork
+                        
+** Important **
+        - Do not repeat the same command
+        - Do not stop and keep playing

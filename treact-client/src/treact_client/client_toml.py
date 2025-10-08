@@ -1,6 +1,7 @@
-from pathlib import Path
-from typing import Any
 import tomllib
+from pathlib import Path
+from typing import TypedDict
+
 from langgraph.graph.state import RunnableConfig
 from pydantic import BaseModel
 
@@ -25,18 +26,34 @@ class TOMLConfig(BaseModel):
     execute: ExecuteConfig
 
 
-def parse_toml_config(toml_path_str: str) -> dict[str, Any]:
-    toml_path = Path(toml_path_str)
+class TOMLTypedDict(TypedDict):
+    client_name: str
+    prompt_template: str
+    game_name: str
+    maximum_step: int
+    missing_tool_call_threshold: int
+    history_max_length: int
+    max_branch_per_node: int
+    iterations: int
+    config: RunnableConfig
+
+
+def parse_toml_config(toml_path: Path) -> TOMLTypedDict:
 
     if not toml_path.exists():
         raise FileNotFoundError(f"TOML file not found: {toml_path}")
 
-    with open(toml_path, "rb") as f:
+    with toml_path.open("rb") as f:
         raw_data = tomllib.load(f)
 
     config = TOMLConfig(**raw_data)
 
-    template_path = toml_path.parent / config.client.prompt_template
+    raw_path = Path(config.client.prompt_template)
+    if raw_path.is_absolute():
+        template_path = raw_path
+    else:
+        template_path = toml_path.parent / raw_path
+
     if not template_path.exists():
         raise FileNotFoundError(f"Prompt template not found: {template_path}")
 

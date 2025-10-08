@@ -25,7 +25,8 @@ dependencies = [
 standard-client = "main:standard_client"
 react-client = "main:react_client"
 treact-client = "main:treact_client"
-action-client = "main:action-client"
+action-client = "main:action_client"
+mcp-client = "main:custom_client"
 
 [tool.poetry]
 packages = [

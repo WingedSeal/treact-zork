@@ -1,17 +1,13 @@
 from dataclasses import dataclass
-from typing import Any, NotRequired, TypedDict, Annotated
-from .utils import PeekableQueue
+from typing import Annotated, Any, NotRequired, TypedDict
 
 from langchain_core.language_models import BaseChatModel
 
 from .ai_model_response import AIModelResponse
 from .log import get_logger
-from .tool_call import (
-    ToolCall,
-    ToolCallResult,
-    ToolCallResultNode,
-    ToolCallResultNodeUpdate,
-)
+from .tool_call import (ToolCall, ToolCallResult, ToolCallResultNode,
+                        ToolCallResultNodeUpdate)
+from .utils import PeekableQueue
 
 logger = get_logger(__name__)
 
