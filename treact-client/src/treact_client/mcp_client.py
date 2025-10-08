@@ -24,7 +24,6 @@ from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
 from mcp.types import TextContent
 from requests.exceptions import ConnectionError, HTTPError, Timeout
-from sqlalchemy import case
 from tqdm import tqdm
 
 from . import prompt_template
@@ -33,8 +32,14 @@ from .ai_model_response import AIModelResponse
 from .csv_logger import CSVLogger
 from .load_env import env
 from .log import get_logger
-from .state import ModelSettings, PartialState, State
-from .tool_call import ToolCall, ToolCallResult, ToolServerResponse
+from .state import ModelSettings, StateUpdate, State
+from .tool_call import (
+    ToolCall,
+    ToolCallResult,
+    ToolCallResultNode,
+    ToolCallResultNodeUpdate,
+    ToolServerResponse,
+)
 from .exceptions import (
     NoSessionException,
     UnreachableServerException,
@@ -104,7 +109,7 @@ class MCPClient:
         self.agent = self._get_graph().compile()
 
     def _get_graph(self) -> StateGraph:
-        async def call_llm(state: State) -> PartialState:
+        async def call_llm(state: State) -> StateUpdate:
             logger.info(f"Executing {call_llm.__name__}: {state['current_step']}")
             if state["current_step"] == 0:
                 logger.debug("Bypassing LLM. Calling 'gen-key'.")
@@ -160,9 +165,14 @@ class MCPClient:
                 time.sleep(8)  # Prevent Gemini from exploding
 
             logger.debug("Thoughts:")
+            tool_call_result_node: ToolCallResultNode = state[
+                "tool_call_result_history_tree"
+            ].peek()
             async for chunk in chain.astream(
                 {
-                    "tool_call_result_history": state["tool_call_result_history"],
+                    "tool_call_result_history": tool_call_result_node.get_history(
+                        state["model_settings"].history_max_length
+                    ),
                     "last_ai_message_result_content": state[
                         "last_ai_message_result_content"
                     ],
@@ -195,11 +205,13 @@ class MCPClient:
             return {
                 "is_missing_tool_call": False,
                 "tool_calls": tool_calls,
+                "tool_calls_parent": tool_call_result_node,
+                "tool_call_result_history_tree": ToolCallResultNodeUpdate.Pop(),
                 "last_ai_message_result_content": ai_message_result.content,
                 "current_step": state["current_step"] + 1,
             }
 
-        def handle_missing_tool_call(state: State) -> PartialState:
+        def handle_missing_tool_call(state: State) -> StateUpdate:
             logger.warning("LLM did not call any tool.")
             return {
                 "is_missing_tool_call": True,
@@ -220,28 +232,17 @@ class MCPClient:
             else:
                 return "HANDLE_MISSING_TOOL_CALL"
 
-        async def call_tools(state: State) -> PartialState:
+        async def call_tools(state: State) -> StateUpdate:
             logger.info(f"Executing {call_tools.__name__}: {state['current_step']}")
             if self.session is None:
                 raise NoSessionException()
-            tool_call_results: list[ToolCallResult] = []
+            tool_call_results: list[ToolCallResultNode] = []
             key = ""
             for tool in state["tool_calls"]:
                 logger.debug(f"Calling {tool.tool_name}.")
-                try:
-                    tool_call_result = await self.session.call_tool(
-                        tool.tool_name, arguments=tool.arguments
-                    )
-                except Exception as e:
-                    tool_call_results.append(
-                        ToolCallResult(
-                            tool_name=tool.tool_name,
-                            arguments=tool.arguments,
-                            tool_server_response={"MCP-Server Error": str(e)},
-                        )
-                    )
-                    logger.error(e)
-                    continue
+                tool_call_result = await self.session.call_tool(
+                    tool.tool_name, arguments=tool.arguments
+                )
 
                 content = tool_call_result.content[0]
                 if not isinstance(content, TextContent):
@@ -252,24 +253,24 @@ class MCPClient:
                 if tool.tool_name == "get-chat-log":
                     continue
                 tool_call_results.append(
-                    ToolCallResult(
-                        tool_name=tool.tool_name,
-                        arguments=tool.arguments,
-                        tool_server_response=server_response,
+                    ToolCallResultNode(
+                        ToolCallResult(
+                            tool_name=tool.tool_name,
+                            arguments=tool.arguments,
+                            tool_server_response=server_response,
+                        ),
+                        state["tool_calls_parent"],
                     )
                 )
 
-            tool_call_results = state["tool_call_result_history"] + tool_call_results
-            if len(tool_call_results) > state["model_settings"].history_max_length:
-                tool_call_results = tool_call_results[
-                    -state["model_settings"].history_max_length :
-                ]
             return {
-                "tool_call_result_history": tool_call_results,
+                "tool_call_result_history_tree": ToolCallResultNodeUpdate.PutBack(
+                    tool_call_results
+                ),
                 "zork_session_key": key,
             }
 
-        async def end_and_summarize(state: State) -> PartialState:
+        async def end_and_summarize(state: State) -> StateUpdate:
             logger.info(f"Executing {call_tools.__name__}: {state['current_step']}")
             if self.session is None:
                 raise NoSessionException()
@@ -307,7 +308,11 @@ class MCPClient:
                 AIModelResponse,
                 await chain.ainvoke(
                     {
-                        "tool_call_result_history": state["tool_call_result_history"],
+                        "tool_call_result_history": state[
+                            "tool_call_result_history_tree"
+                        ]
+                        .peek()
+                        .get_history(state["model_settings"].history_max_length),
                     }
                 ),
             )

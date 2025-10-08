@@ -1,11 +1,16 @@
 from dataclasses import dataclass
-from typing import Any, NotRequired, TypedDict
+from typing import Any, NotRequired, TypedDict, Annotated
+from .utils import PeekableQueue
 
 from langchain_core.language_models import BaseChatModel
 
 from .ai_model_response import AIModelResponse
 from .log import get_logger
-from .tool_call import ToolCall, ToolCallResult
+from .tool_call import (
+    ToolCall,
+    ToolCallResultNode,
+    ToolCallResultNodeUpdate,
+)
 
 logger = get_logger(__name__)
 
@@ -26,8 +31,9 @@ class ModelSettings:
                 "model_settings": self,
                 "current_step": 0,
                 "missing_tool_call_count": 0,
-                "tool_call_result_history": [],
+                "tool_call_result_history": PeekableQueue(),
                 "tool_calls": [],
+                "tool_calls_parent": None,
                 "last_ai_message_result_content": "",
                 "ai_model_response": None,
                 "zork_session_key": "",
@@ -45,22 +51,38 @@ class _CSVLoggedState(TypedDict):
     missing_tool_call_threshold: int
 
 
+def update_tool_call_result_history(
+    current_queue: PeekableQueue[ToolCallResultNode],
+    update: ToolCallResultNodeUpdate.BaseUpdate,
+) -> None:
+    match update:
+        case ToolCallResultNodeUpdate.Pop:
+            current_queue.get_nowait()
+        case ToolCallResultNodeUpdate.PutBack(items):
+            for item in items:
+                current_queue.put_nowait(item)
+
+
 class State(_CSVLoggedState, TypedDict):
     model_settings: ModelSettings
-    tool_call_result_history: list[ToolCallResult]
+    tool_call_result_history_tree: Annotated[
+        PeekableQueue[ToolCallResultNode], update_tool_call_result_history
+    ]
     tool_calls: list[ToolCall]
+    tool_calls_parent: ToolCallResultNode | None
     last_ai_message_result_content: str | list[str | dict[Any, Any]]
     ai_model_response: AIModelResponse | None
     zork_session_key: str
     is_missing_tool_call: bool
 
 
-class PartialState(TypedDict):
+class StateUpdate(TypedDict):
     current_step: NotRequired[int]
     missing_tool_call_count: NotRequired[int]
 
-    tool_call_result_history: NotRequired[list[ToolCallResult]]
+    tool_call_result_history_tree: NotRequired[ToolCallResultNodeUpdate.BaseUpdate]
     tool_calls: NotRequired[list[ToolCall]]
+    tool_calls_parent: NotRequired[ToolCallResultNode | None]
     last_ai_message_result_content: NotRequired[str | list[str | dict[Any, Any]]]
     ai_model_response: NotRequired[AIModelResponse | None]
     zork_session_key: NotRequired[str]
