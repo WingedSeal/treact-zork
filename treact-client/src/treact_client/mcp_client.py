@@ -123,24 +123,6 @@ class MCPClient:
                     "last_ai_message_result_content": "",
                     "current_step": state["current_step"] + 1,
                 }
-            if state["current_step"] == state["maximum_step"] - 1:
-                logger.debug("Final step before summarization. Calling 'inventory'.")
-                return {
-                    "tool_calls": [
-                        ToolCall(
-                            tool_name="use-key",
-                            arguments={
-                                "game_name": state["model_settings"].game_name,
-                                "command": "inventory",
-                                "session_key": state["zork_session_key"],
-                            },
-                        ),
-                    ],
-                    "last_ai_message_result_content": state[
-                        "last_ai_message_result_content"
-                    ],
-                    "current_step": state["current_step"] + 1,
-                }
 
             llm = state["model_settings"].llm
             llm_with_tools = llm.bind_tools(self.tools)
@@ -237,7 +219,6 @@ class MCPClient:
             if self.session is None:
                 raise NoSessionException()
             tool_call_results: list[ToolCallResultNode] = []
-            key = ""
             for tool in state["tool_calls"]:
                 logger.debug(f"Calling {tool.tool_name}.")
                 tool_call_result = await self.session.call_tool(
@@ -249,7 +230,6 @@ class MCPClient:
                     raise InvalidToolCallResultException(type(content))
                 server_response: ToolServerResponse = orjson.loads(content.text)
                 logger.info(f"Tool Server Response: {server_response}.")
-                key = server_response.get("new_key", state["zork_session_key"])
                 if tool.tool_name == "get-chat-log":
                     continue
                 tool_call_results.append(
@@ -267,7 +247,6 @@ class MCPClient:
                 "tool_call_result_history_tree": ToolCallResultNodeUpdate.PutBack(
                     tool_call_results
                 ),
-                "zork_session_key": key,
             }
 
         async def end_and_summarize(state: State) -> StateUpdate:
@@ -280,7 +259,9 @@ class MCPClient:
                     name="get-chat-log",
                     arguments={
                         "game_name": state["model_settings"].game_name,
-                        "session_key": state["zork_session_key"],
+                        "session_key": state["tool_call_result_history_tree"]
+                        .peek()
+                        .tool_call_result.tool_server_response["new_key"],
                     },
                 )
             except Exception as e:

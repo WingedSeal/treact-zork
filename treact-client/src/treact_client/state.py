@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, NotRequired, TypeAlias, TypedDict, Annotated, get_type_hints
+from typing import Any, NotRequired, TypedDict, Annotated
 from .utils import PeekableQueue
 
 from langchain_core.language_models import BaseChatModel
@@ -72,7 +72,6 @@ class State(_CSVLoggedState, TypedDict):
     tool_calls_parent: ToolCallResultNode | None
     last_ai_message_result_content: str | list[str | dict[Any, Any]]
     ai_model_response: AIModelResponse | None
-    zork_session_key: str
     is_missing_tool_call: bool
 
 
@@ -85,5 +84,4 @@ class StateUpdate(TypedDict):
     tool_calls_parent: NotRequired[ToolCallResultNode | None]
     last_ai_message_result_content: NotRequired[str | list[str | dict[Any, Any]]]
     ai_model_response: NotRequired[AIModelResponse | None]
-    zork_session_key: NotRequired[str]
     is_missing_tool_call: NotRequired[bool]
