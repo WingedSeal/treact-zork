@@ -15,14 +15,14 @@ class ClientConfig(BaseModel):
     max_branch_per_node: int
 
 
-class ExecutionConfig(BaseModel):
+class ExecuteConfig(BaseModel):
     iterations: int
 
 
 class TOMLConfig(BaseModel):
     client: ClientConfig
     config: RunnableConfig
-    execution: ExecutionConfig
+    execute: ExecuteConfig
 
 
 def parse_toml_config(toml_path_str: str) -> dict[str, Any]:
@@ -50,6 +50,6 @@ def parse_toml_config(toml_path_str: str) -> dict[str, Any]:
         "missing_tool_call_threshold": config.client.missing_tool_call_threshold,
         "history_max_length": config.client.history_max_length,
         "max_branch_per_node": config.client.max_branch_per_node,
-        "iterations": config.execution.iterations,
+        "iterations": config.execute.iterations,
         "config": config.config,
     }

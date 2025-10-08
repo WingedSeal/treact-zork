@@ -10,5 +10,5 @@ max_branch_per_node = 1
 [config]
 recursion_limit = 1200
 
-[run]
+[execute]
 iterations = 10
