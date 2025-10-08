@@ -3,12 +3,12 @@ name = "Standard"
 prompt_template = "./standard-template.txt"
 game_name = "zork1"
 maximum_step = 250
-missing_tool_call_threshold = 5,
-history_max_length = 10,
-max_branch_per_node = 1,
+missing_tool_call_threshold = 5
+history_max_length = 10
+max_branch_per_node = 1
 
 [config]
-recursion_limit = 1200,
+recursion_limit = 1200
 
 [run]
-iterations = 10,
+iterations = 10
