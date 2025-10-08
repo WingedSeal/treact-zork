@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 ToolServerResponse = dict[str, Any]
@@ -19,7 +19,7 @@ class ToolCallResult(ToolCall):
 @dataclass
 class ToolCallResultNode:
     tool_call_result: ToolCallResult
-    parent_node: "ToolCallResultNode | None"
+    parent_node: "ToolCallResultNode | None" = field(repr=False)
 
     def get_history(self, history_max_length: int) -> list[ToolCallResult]:
         history: list[ToolCallResult] = []

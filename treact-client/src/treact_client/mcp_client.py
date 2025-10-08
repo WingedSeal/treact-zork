@@ -25,6 +25,7 @@ from mcp.client.streamable_http import streamablehttp_client
 from mcp.types import TextContent
 from requests.exceptions import ConnectionError, HTTPError, Timeout
 from tqdm import tqdm
+from pprint import pformat
 
 from . import prompt_template
 from .ai_mode import AIMode
@@ -217,34 +218,16 @@ class MCPClient:
 
         async def call_tools(state: State) -> StateUpdate:
             logger.info(f"Executing {call_tools.__name__}: {state['current_step']}")
-            if self.session is None:
-                raise NoSessionException()
             tool_call_results: list[ToolCallResult] = []
             for tool in state["tool_calls"]:
-                logger.debug(f"Calling {tool.tool_name}.")
-                tool_call_result = await self.session.call_tool(
-                    tool.tool_name, arguments=tool.arguments
-                )
-
-                content = tool_call_result.content[0]
-                if not isinstance(content, TextContent):
-                    raise InvalidToolCallResultException(type(content))
-                server_response: ToolServerResponse = orjson.loads(content.text)
-                logger.info(f"Tool Server Response: {server_response}.")
-                if tool.tool_name == "get-chat-log":
-                    continue
-                tool_call_results.append(
-                    ToolCallResult(
-                        tool_name=tool.tool_name,
-                        arguments=tool.arguments,
-                        tool_server_response=server_response,
-                    ),
-                )
+                tool_call_results.append(await self.call_tool(tool))
 
             return {"tool_call_results": tool_call_results}
 
         async def prune_tool_call_results(state: State) -> StateUpdate:
             tool_call_results = state["tool_call_results"]
+
+            # TODO: evaluate good nodes
 
             if len(tool_call_results) > state["model_settings"].max_branch_per_node:
                 raise MaxBranchPerNodeExceededException(
@@ -263,54 +246,75 @@ class MCPClient:
             logger.info(f"Executing {call_tools.__name__}: {state['current_step']}")
             if self.session is None:
                 raise NoSessionException()
-            logger.debug(f"Calling get-chat-log.")
-            try:
-                await self.session.call_tool(
-                    name="get-chat-log",
+
+            tool_call_result_nodes: list[ToolCallResultNode] = list(
+                state["tool_call_result_history_tree"].queue
+            )
+
+            logger.info(
+                f"{len(tool_call_result_nodes)} leaf node(s) are left in the history tree."
+            )
+            logger.debug(f"ToolCallResultNodes are {pformat(tool_call_result_nodes)}")
+
+            chosen_tool_call_result_node = tool_call_result_nodes[
+                0
+            ]  # TODO: Evaluate the best node
+
+            logger.info(f"The chosen node is {chosen_tool_call_result_node}")
+
+            logger.debug(f"Sending 'inventory' command")
+            tool_call_result_with_inventory = await self.call_tool(
+                ToolCall(
+                    tool_name="use-key",
                     arguments={
                         "game_name": state["model_settings"].game_name,
-                        "session_key": state["tool_call_result_history_tree"]
-                        .peek()
-                        .tool_call_result.tool_server_response["new_key"],
+                        "command": "inventory",
+                        "session_key": chosen_tool_call_result_node.tool_call_result.tool_server_response[
+                            "new_key"
+                        ],
                     },
                 )
-            except Exception as e:
-                logger.error(e)
-                return {
-                    "ai_model_response": AIModelResponse(
-                        game_completed=False,
-                        current_inventory="",
-                        current_status=str(e),
-                        score=0,
-                        move=0,
-                    ),
-                    "current_step": state["current_step"] - 1,
-                }
-
-            structured_llm = state["model_settings"].llm.with_structured_output(
-                AIModelResponse
             )
+
+            tool_call_result_node_with_inventory = ToolCallResultNode(
+                tool_call_result_with_inventory, chosen_tool_call_result_node
+            )
+
+            logger.debug("Calling get-chat-log")
+            chat_log = await self.call_tool(
+                ToolCall(
+                    tool_name="get-chat-log",
+                    arguments={
+                        "game_name": state["model_settings"].game_name,
+                        "session_key": tool_call_result_with_inventory.tool_server_response[
+                            "new_key"
+                        ],
+                    },
+                )
+            )
+            logger.info(f"Chat Log: \n {chat_log}")
+
+            llm_with_structured_output = state[
+                "model_settings"
+            ].llm.with_structured_output(AIModelResponse)
 
             template = prompt_template.SUMMARIZE
 
             prompt = ChatPromptTemplate.from_template(template)
-            chain = prompt | structured_llm
-            ai_model_response: AIModelResponse = cast(
+            chain = prompt | llm_with_structured_output
+            ai_model_response = cast(
                 AIModelResponse,
                 await chain.ainvoke(
                     {
-                        "tool_call_result_history": state[
-                            "tool_call_result_history_tree"
-                        ]
-                        .peek()
-                        .get_history(state["model_settings"].history_max_length),
+                        "tool_call_result_history": tool_call_result_node_with_inventory.get_history(
+                            state["model_settings"].history_max_length
+                        )
                     }
                 ),
             )
             logger.info(f"Structured Response: {ai_model_response}")
             return {
                 "ai_model_response": ai_model_response,
-                "current_step": state["current_step"] - 1,
             }
 
         graph = StateGraph(State)
@@ -334,6 +338,25 @@ class MCPClient:
         graph.add_edge("prune_tool_call_results", "call_llm")
         graph.add_edge("end_and_summarize", END)
         return graph
+
+    async def call_tool(self, tool: ToolCall) -> ToolCallResult:
+        if self.session is None:
+            raise NoSessionException()
+        logger.debug(f"Calling {tool.tool_name}.")
+        call_tool_result = await self.session.call_tool(
+            tool.tool_name, arguments=tool.arguments
+        )
+
+        content = call_tool_result.content[0]
+        if not isinstance(content, TextContent):
+            raise InvalidToolCallResultException(type(content))
+        server_response: ToolServerResponse = orjson.loads(content.text)
+        logger.info(f"Tool Server Response: {server_response}.")
+        return ToolCallResult(
+            tool_name=tool.tool_name,
+            arguments=tool.arguments,
+            tool_server_response=server_response,
+        )
 
     async def invoke_agent(
         self, model_settings: ModelSettings, config: RunnableConfig
