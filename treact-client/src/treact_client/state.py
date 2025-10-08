@@ -8,6 +8,7 @@ from .ai_model_response import AIModelResponse
 from .log import get_logger
 from .tool_call import (
     ToolCall,
+    ToolCallResult,
     ToolCallResultNode,
     ToolCallResultNodeUpdate,
 )
@@ -23,6 +24,7 @@ class ModelSettings:
     maximum_step: int
     missing_tool_call_threshold: int
     history_max_length: int
+    max_branch_per_node: int
 
     def to_new_state(self) -> "State":
         logger.debug(f"Generating new state from model settings: {self}")
@@ -33,10 +35,10 @@ class ModelSettings:
                 "missing_tool_call_count": 0,
                 "tool_call_result_history_tree": PeekableQueue(),
                 "tool_calls": [],
+                "tool_call_results": [],
                 "tool_calls_parent": None,
                 "last_ai_message_result_content": "",
                 "ai_model_response": None,
-                "zork_session_key": "",
                 "is_missing_tool_call": False,
                 "maximum_step": self.maximum_step,
                 "missing_tool_call_threshold": self.missing_tool_call_threshold,
@@ -69,6 +71,7 @@ class State(_CSVLoggedState, TypedDict):
         PeekableQueue[ToolCallResultNode], update_tool_call_result_history
     ]
     tool_calls: list[ToolCall]
+    tool_call_results: list[ToolCallResult]
     tool_calls_parent: ToolCallResultNode | None
     last_ai_message_result_content: str | list[str | dict[Any, Any]]
     ai_model_response: AIModelResponse | None
@@ -81,6 +84,7 @@ class StateUpdate(TypedDict):
 
     tool_call_result_history_tree: NotRequired[ToolCallResultNodeUpdate.BaseUpdate]
     tool_calls: NotRequired[list[ToolCall]]
+    tool_call_results: NotRequired[list[ToolCallResult]]
     tool_calls_parent: NotRequired[ToolCallResultNode | None]
     last_ai_message_result_content: NotRequired[str | list[str | dict[Any, Any]]]
     ai_model_response: NotRequired[AIModelResponse | None]

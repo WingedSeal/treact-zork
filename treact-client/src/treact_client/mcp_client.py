@@ -41,6 +41,7 @@ from .tool_call import (
     ToolServerResponse,
 )
 from .exceptions import (
+    MaxBranchPerNodeExceededException,
     NoSessionException,
     UnreachableServerException,
     InvalidToolCallResultException,
@@ -218,7 +219,7 @@ class MCPClient:
             logger.info(f"Executing {call_tools.__name__}: {state['current_step']}")
             if self.session is None:
                 raise NoSessionException()
-            tool_call_results: list[ToolCallResultNode] = []
+            tool_call_results: list[ToolCallResult] = []
             for tool in state["tool_calls"]:
                 logger.debug(f"Calling {tool.tool_name}.")
                 tool_call_result = await self.session.call_tool(
@@ -233,19 +234,28 @@ class MCPClient:
                 if tool.tool_name == "get-chat-log":
                     continue
                 tool_call_results.append(
-                    ToolCallResultNode(
-                        ToolCallResult(
-                            tool_name=tool.tool_name,
-                            arguments=tool.arguments,
-                            tool_server_response=server_response,
-                        ),
-                        state["tool_calls_parent"],
-                    )
+                    ToolCallResult(
+                        tool_name=tool.tool_name,
+                        arguments=tool.arguments,
+                        tool_server_response=server_response,
+                    ),
                 )
 
+            return {"tool_call_results": tool_call_results}
+
+        async def prune_tool_call_results(state: State) -> StateUpdate:
+            tool_call_results = state["tool_call_results"]
+
+            if len(tool_call_results) > state["model_settings"].max_branch_per_node:
+                raise MaxBranchPerNodeExceededException(
+                    len(tool_call_results), state["model_settings"].max_branch_per_node
+                )
             return {
                 "tool_call_result_history_tree": ToolCallResultNodeUpdate.PutBack(
-                    tool_call_results
+                    [
+                        ToolCallResultNode(tool_call_result, state["tool_calls_parent"])
+                        for tool_call_result in tool_call_results
+                    ]
                 ),
             }
 
@@ -306,6 +316,7 @@ class MCPClient:
         graph = StateGraph(State)
         graph.add_node("call_llm", call_llm)
         graph.add_node("call_tools", call_tools)
+        graph.add_node("prune_tool_call_results", prune_tool_call_results)
         graph.add_node("end_and_summarize", end_and_summarize)
         graph.add_node("handle_missing_tool_call", handle_missing_tool_call)
 
@@ -319,7 +330,8 @@ class MCPClient:
             "call_llm", should_continue, cast(dict[Hashable, str], path_map)
         )
         graph.add_edge("handle_missing_tool_call", "call_llm")
-        graph.add_edge("call_tools", "call_llm")
+        graph.add_edge("call_tools", "prune_tool_call_results")
+        graph.add_edge("prune_tool_call_results", "call_llm")
         graph.add_edge("end_and_summarize", END)
         return graph
 
@@ -350,6 +362,7 @@ class MCPClient:
                         maximum_step=250,
                         missing_tool_call_threshold=5,
                         history_max_length=10,
+                        max_branch_per_node=1,
                     ),
                     config={"recursion_limit": 1200},
                 )
@@ -363,6 +376,7 @@ class MCPClient:
                         maximum_step=250,
                         missing_tool_call_threshold=5,
                         history_max_length=10,
+                        max_branch_per_node=1,
                     ),
                     config={"recursion_limit": 1200},
                 )
@@ -375,6 +389,7 @@ class MCPClient:
                         maximum_step=250,
                         missing_tool_call_threshold=5,
                         history_max_length=10,
+                        max_branch_per_node=1,
                     ),
                     config={"recursion_limit": 1200},
                 )
