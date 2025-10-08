@@ -34,9 +34,6 @@ def parse_toml_config(toml_path_str: str) -> dict[str, Any]:
     with open(toml_path, "rb") as f:
         raw_data = tomllib.load(f)
 
-    if "run" in raw_data:
-        raw_data["execution"] = raw_data.pop("run")
-
     config = TOMLConfig(**raw_data)
 
     template_path = toml_path.parent / config.client.prompt_template
