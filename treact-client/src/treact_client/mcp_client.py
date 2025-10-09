@@ -115,6 +115,7 @@ class MCPClient:
                         ToolCall(
                             tool_name="gen-key",
                             arguments={"game_name": state["model_settings"].game_name},
+                            ai_thought="Let's start with gen-key",
                         )
                     ],
                     "current_step": state["current_step"] + 1,
@@ -361,6 +362,7 @@ class MCPClient:
         return ToolCallResult(
             tool_name=tool.tool_name,
             arguments=tool.arguments,
+            ai_thought=tool.ai_thought,
             tool_server_response=server_response,
         )
 
