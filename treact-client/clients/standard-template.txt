@@ -35,12 +35,6 @@ collect as many treasures as possible and putting them in the trophy case in the
         - Clockwork canary
         - Brass bauble
 
-** Previous result **
-        {tool_call_result_history}
-
-** Previous Thought **
-        {last_ai_message_result_content}
-
 ** Instruction **
         - Based on the previous result and previous thought, use the previous generated key and assign proper command to play Zork
                         
