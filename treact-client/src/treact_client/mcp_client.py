@@ -137,8 +137,8 @@ class MCPClient:
                     state["model_settings"].history_max_length
                 )
                 for msg in (
-                    HumanMessage(content=str(tool_call_result)),
                     AIMessage(content=tool_call_result.ai_thought or ""),
+                    HumanMessage(content=str(tool_call_result)),
                 )
             ]
             prompt = ChatPromptTemplate.from_messages(messages)
