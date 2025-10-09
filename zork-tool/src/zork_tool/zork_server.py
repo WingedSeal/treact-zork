@@ -79,13 +79,13 @@ app.state.key_manager = KeyManager(list(GAMES.keys()))
 
 class GenKeyResponse(BaseModel):
     initial_response: str
-    new_key: str
+    new_session_key: str
 
 
 class UseKeyResponse(BaseModel):
-    key_valid: bool
+    session_key_valid: bool
     response: str
-    new_key: str
+    new_session_key: str
 
 
 class GetDictResponse(BaseModel):
@@ -111,7 +111,10 @@ def create_endpoint(game: str, game_file: str):
         logger.info("Gen Key")
         key, seed = cast(KeyManager, app.state.key_manager).gen_key(game)
         logger.info(f"Generated key: {key} for game: {game} with seed {seed}")
-        return {"initial_response": zork_post([], game_file, seed), "new_key": key}
+        return {
+            "initial_response": zork_post([], game_file, seed),
+            "new_session_key": key,
+        }
 
     @app.post(f"/use_key/{game}", response_model=UseKeyResponse)
     def use_key(request: CommandRequest):
@@ -119,21 +122,21 @@ def create_endpoint(game: str, game_file: str):
         logger.info(f"Using key: {request.key} for game: {game}")
         if request.command.lower() == "quit":
             return {
-                "key_valid": True,
+                "session_key_valid": True,
                 "response": "You are not allowed to quit. Use the old key.",
-                "new_key": request.key,
+                "new_session_key": request.key,
             }
         key_manager = cast(KeyManager, app.state.key_manager)
         new_key, seed = key_manager.add_command(game, request.key, request.command)
         logger.info(f"New Key: {new_key} and Seed: {seed}")
         if not new_key:
-            return {"key_valid": False, "response": "", "new_key": ""}
+            return {"session_key_valid": False, "response": "", "new_session_key": ""}
         history = key_manager.get_history(game, new_key)
         logger.info(f"History for new key: {history}")
         return {
-            "key_valid": True,
+            "session_key_valid": True,
             "response": zork_post(history, game_file, seed),
-            "new_key": new_key,
+            "new_session_key": new_key,
         }
 
     @app.get(f"/dict/{game}", response_model=GetDictResponse)
