@@ -1,6 +1,6 @@
 [client]
 name = "Custom"
-prompt_template = "./clients/react-template.txt"
+prompt_template = "client-template.txt"
 game_name = "zork1"
 maximum_step = 250
 missing_tool_call_threshold = 5

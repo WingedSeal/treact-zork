@@ -37,7 +37,6 @@ class ModelSettings:
                 "tool_calls": [],
                 "tool_call_results": [],
                 "tool_calls_parent": None,
-                "last_ai_message_result_content": "",
                 "ai_model_response": None,
                 "is_missing_tool_call": False,
                 "maximum_step": self.maximum_step,
@@ -77,7 +76,6 @@ class State(_CSVLoggedState, TypedDict):
     tool_calls: list[ToolCall]
     tool_call_results: list[ToolCallResult]
     tool_calls_parent: ToolCallResultNode | None
-    last_ai_message_result_content: str | list[str | dict[Any, Any]]
     ai_model_response: AIModelResponse | None
     is_missing_tool_call: bool
 
@@ -90,6 +88,5 @@ class StateUpdate(TypedDict):
     tool_calls: NotRequired[list[ToolCall]]
     tool_call_results: NotRequired[list[ToolCallResult]]
     tool_calls_parent: NotRequired[ToolCallResultNode | None]
-    last_ai_message_result_content: NotRequired[str | list[str | dict[Any, Any]]]
     ai_model_response: NotRequired[AIModelResponse | None]
     is_missing_tool_call: NotRequired[bool]

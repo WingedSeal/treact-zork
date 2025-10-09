@@ -5,13 +5,20 @@ import time
 from contextlib import AsyncExitStack
 from pathlib import Path
 from pprint import pformat
-from typing import Hashable, Literal, cast
+from typing import Hashable, Literal, Sequence, cast
 
 import orjson
 import requests
-from langchain_core.messages import AIMessageChunk, BaseMessageChunk, SystemMessage
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessageChunk,
+    HumanMessage,
+    MessageLikeRepresentation,
+    SystemMessage,
+)
 from langchain_core.messages import ToolCall as LangChainToolCall
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_mcp_adapters.tools import BaseTool, load_mcp_tools
 from langchain_ollama import ChatOllama
@@ -110,7 +117,6 @@ class MCPClient:
                             arguments={"game_name": state["model_settings"].game_name},
                         )
                     ],
-                    "last_ai_message_result_content": "",
                     "current_step": state["current_step"] + 1,
                 }
 
@@ -118,13 +124,24 @@ class MCPClient:
             llm_with_tools = llm.bind_tools(self.tools)
 
             template = state["model_settings"].prompt_template
-            prompt = ChatPromptTemplate.from_template(template)
+            # prompt = ChatPromptTemplate.from_template(template)
 
-            # prompt = ChatPromptTemplate.from_messages(
-            #     [
-            #         ("system", template),
-            #     ]
-            # )
+            tool_call_result_node: ToolCallResultNode = state[
+                "tool_call_result_history_tree"
+            ].peek()
+            messages: Sequence[MessageLikeRepresentation] = [
+                SystemMessage(content=template)
+            ] + [
+                msg
+                for tool_call_result in tool_call_result_node.get_history(
+                    state["model_settings"].history_max_length
+                )
+                for msg in (
+                    HumanMessage(content=str(tool_call_result)),
+                    AIMessage(content=tool_call_result.ai_thought or ""),
+                )
+            ]
+            prompt = ChatPromptTemplate.from_messages(messages)
 
             if state["is_missing_tool_call"]:
                 logger.warning("Missing tool call. Reprompting")
@@ -143,19 +160,7 @@ class MCPClient:
                 time.sleep(8)  # Prevent Gemini from exploding
 
             logger.debug("Thoughts:")
-            tool_call_result_node: ToolCallResultNode = state[
-                "tool_call_result_history_tree"
-            ].peek()
-            async for chunk in chain.astream(
-                {
-                    "tool_call_result_history": tool_call_result_node.get_history(
-                        state["model_settings"].history_max_length
-                    ),
-                    "last_ai_message_result_content": state[
-                        "last_ai_message_result_content"
-                    ],
-                }
-            ):
+            async for chunk in chain.astream({}):
                 ai_tool_calls: list[LangChainToolCall] | None = getattr(
                     chunk, "tool_calls", None
                 )
@@ -176,7 +181,11 @@ class MCPClient:
             logger.debug(f"LLM Tool Calls: {langchain_tool_calls}")
 
             tool_calls = [
-                ToolCall(tool_name=call["name"], arguments=call["args"])
+                ToolCall(
+                    tool_name=call["name"],
+                    arguments=call["args"],
+                    ai_thought=ai_message_result.content,
+                )
                 for call in langchain_tool_calls
             ]
 
@@ -185,7 +194,6 @@ class MCPClient:
                 "tool_calls": tool_calls,
                 "tool_calls_parent": tool_call_result_node,
                 "tool_call_result_history_tree": ToolCallResultNodeUpdate.Pop(),
-                "last_ai_message_result_content": ai_message_result.content,
                 "current_step": state["current_step"] + 1,
             }
 
@@ -292,8 +300,7 @@ class MCPClient:
                 "model_settings"
             ].llm.with_structured_output(AIModelResponse)
 
-            template = prompt_template.SUMMARIZE
-            prompt = ChatPromptTemplate.from_template(template)
+            prompt = PromptTemplate.from_template(prompt_template.SUMMARIZE)
 
             # prompt = ChatPromptTemplate.from_messages(
             #     [

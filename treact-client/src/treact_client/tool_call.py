@@ -4,11 +4,14 @@ from typing import Any
 ToolServerResponse = dict[str, Any]
 """Response JSON from tool server"""
 
+AI_RESULT_CONTENT = str | list[str | dict[Any, Any]]
+
 
 @dataclass(kw_only=True)
 class ToolCall:
     tool_name: str
     arguments: dict[str, str]
+    ai_thought: AI_RESULT_CONTENT | None = None
 
 
 @dataclass(kw_only=True)
