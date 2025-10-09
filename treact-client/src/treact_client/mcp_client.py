@@ -120,6 +120,12 @@ class MCPClient:
             template = state["model_settings"].prompt_template
             prompt = ChatPromptTemplate.from_template(template)
 
+            # prompt = ChatPromptTemplate.from_messages(
+            #     [
+            #         ("system", template),
+            #     ]
+            # )
+
             if state["is_missing_tool_call"]:
                 logger.warning("Missing tool call. Reprompting")
                 prompt.append(
@@ -287,8 +293,13 @@ class MCPClient:
             ].llm.with_structured_output(AIModelResponse)
 
             template = prompt_template.SUMMARIZE
-
             prompt = ChatPromptTemplate.from_template(template)
+
+            # prompt = ChatPromptTemplate.from_messages(
+            #     [
+            #         ("system", template),
+            #     ]
+            # )
             chain = prompt | llm_with_structured_output
             ai_model_response = cast(
                 AIModelResponse,
