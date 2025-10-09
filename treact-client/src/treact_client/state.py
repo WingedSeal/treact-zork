@@ -1,12 +1,16 @@
 from dataclasses import dataclass
-from typing import Annotated, Any, NotRequired, TypedDict
+from typing import Annotated, Any, NotRequired, TypedDict, TypeVar
 
 from langchain_core.language_models import BaseChatModel
 
 from .ai_model_response import AIModelResponse
 from .log import get_logger
-from .tool_call import (ToolCall, ToolCallResult, ToolCallResultNode,
-                        ToolCallResultNodeUpdate)
+from .tool_call import (
+    ToolCall,
+    ToolCallResult,
+    ToolCallResultNode,
+    ToolCallResultNodeUpdate,
+)
 from .utils import PeekableQueue
 
 logger = get_logger(__name__)
@@ -49,16 +53,20 @@ class _CSVLoggedState(TypedDict):
     missing_tool_call_threshold: int
 
 
+T = TypeVar("T", bound=PeekableQueue[ToolCallResultNode])
+
+
 def update_tool_call_result_history(
-    current_queue: PeekableQueue[ToolCallResultNode],
+    current_queue: T,
     update: ToolCallResultNodeUpdate.BaseUpdate,
-) -> None:
+) -> T:
     match update:
         case ToolCallResultNodeUpdate.Pop:
             current_queue.get_nowait()
         case ToolCallResultNodeUpdate.PutBack(items):
             for item in items:
                 current_queue.put_nowait(item)
+    return current_queue
 
 
 class State(_CSVLoggedState, TypedDict):

@@ -10,7 +10,7 @@ class Environment(BaseModel):
         ..., min_length=1, description="IP address the server binds to"
     )
     SERVER_PORT: int = Field(..., ge=1, le=65535, description="Server port")
-    API_KEY: str = Field(...)
+    API_KEY: str = Field(..., repr=False)
 
 
 env = Environment(
@@ -20,4 +20,4 @@ env = Environment(
 )
 
 logger = get_logger(__name__)
-logger.debug(f"Environment loaded: {env}")
+logger.info(f"Environment loaded: {env}")
