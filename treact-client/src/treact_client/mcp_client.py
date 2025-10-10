@@ -292,7 +292,7 @@ class MCPClient:
             logger.info(
                 f"{len(tool_call_result_nodes)} leaf node(s) are left in the history tree."
             )
-            logger.debug(f"ToolCallResultNodes are {pformat(tool_call_result_nodes)}")
+            logger.debug(f"ToolCallResultNodes are {tool_call_result_nodes}")
 
             chosen_tool_call_result_node = tool_call_result_nodes[
                 0
@@ -308,7 +308,7 @@ class MCPClient:
                         "game_name": state["model_settings"].game_name,
                         "command": "inventory",
                         "session_key": chosen_tool_call_result_node.tool_call_result.tool_server_response[
-                            "new_key"
+                            "new_session_key"
                         ],
                     },
                 )
@@ -325,12 +325,12 @@ class MCPClient:
                     arguments={
                         "game_name": state["model_settings"].game_name,
                         "session_key": tool_call_result_with_inventory.tool_server_response[
-                            "new_key"
+                            "new_session_key"
                         ],
                     },
                 )
             )
-            logger.info(f"Chat Log: \n {chat_log}")
+            logger.info(f"Chat Log: \n {chat_log.tool_server_response['log']}")
 
             llm_with_structured_output = state[
                 "model_settings"
@@ -395,7 +395,8 @@ class MCPClient:
         if not isinstance(content, TextContent):
             raise InvalidToolCallResultException(type(content))
         server_response: ToolServerResponse = orjson.loads(content.text)
-        logger.info(f"Tool Server Response: {server_response}.")
+        if tool.tool_name != "get-chat-log":
+            logger.info(f"Tool Server Response: {server_response}.")
         return ToolCallResult(
             tool_name=tool.tool_name,
             arguments=tool.arguments,

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from queue import Empty
 from typing import Annotated, NotRequired, TypedDict, TypeVar
 
 from langchain_core.language_models import BaseChatModel
@@ -69,8 +70,12 @@ def update_tool_call_result_history(
     update: ToolCallResultNodeUpdate.BaseUpdate,
 ) -> T:
     match update:
-        case ToolCallResultNodeUpdate.Pop:
-            current_queue.get_nowait()
+        case ToolCallResultNodeUpdate.Pop():
+            try:
+                node = current_queue.get_nowait()
+                logger.debug(f"Popping from history tree: {node}")
+            except Empty:
+                logger.info("Queue empty, nothing to pop")
         case ToolCallResultNodeUpdate.PutBack(items):
             for item in items:
                 current_queue.put_nowait(item)

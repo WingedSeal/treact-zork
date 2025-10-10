@@ -1,14 +1,13 @@
-
 [client]
 name = "Action"
 prompt_template = "./action-template.txt"
 game_name = "zork1"
 maximum_step = 250
-len_tool_calls_out_of_range_threshold  = 5
+len_tool_calls_out_of_range_threshold = 5
 history_max_length = 10
 max_branch_per_node = 1
-min_tool_calls=1
-max_tool_calls=1
+min_tool_calls = 1
+max_tool_calls = 1
 
 [config]
 recursion_limit = 1200
