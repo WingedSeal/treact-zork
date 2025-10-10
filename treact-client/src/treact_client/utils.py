@@ -7,4 +7,4 @@ T = TypeVar("T")
 class PeekableQueue(Queue[T]):
     def peek(self) -> T:
         with self.mutex:
-            return cast(T, self.queue[-1])
+            return cast(T, self.queue[0])
