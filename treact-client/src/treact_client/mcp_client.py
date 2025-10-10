@@ -66,8 +66,7 @@ MCP_SERVER_URL = f"http://{env.SERVER_IP}:{env.SERVER_PORT}/mcp"
 ACTIONS_AFTER_LLM_CALL = Literal[
     "END_AND_SUMMARIZE",
     "CALL_TOOLS",
-    "HANDLE_MISSING_TOOL_CALL",
-    "missing_tool_call_countER_MEASURE",
+    "HANDLE_LEN_TOOL_CALLS_OUT_OF_RANGE",
 ]
 
 
@@ -130,26 +129,39 @@ class MCPClient:
             tool_call_result_node: ToolCallResultNode = state[
                 "tool_call_result_history_tree"
             ].peek()
-            messages: Sequence[MessageLikeRepresentation] = [
-                SystemMessage(content=template)
-            ] + [
-                msg
-                for tool_call_result in tool_call_result_node.get_history(
-                    state["model_settings"].history_max_length
-                )
-                for msg in (
-                    AIMessage(content=tool_call_result.ai_thought or ""),
-                    HumanMessage(content=str(tool_call_result)),
-                )
-            ]
+            messages: Sequence[MessageLikeRepresentation] = (
+                [SystemMessage(content=template)]
+                + [
+                    msg
+                    for tool_call_result in tool_call_result_node.get_history(
+                        state["model_settings"].history_max_length
+                    )
+                    for msg in (
+                        AIMessage(content=tool_call_result.ai_thought or ""),
+                        HumanMessage(content=str(tool_call_result)),
+                    )
+                ]
+                + [
+                    msg
+                    for len_call_tools, ai_thought_len_tool_calls_out_of_range in state[
+                        "ai_thoughts_len_tool_calls_out_of_range"
+                    ]
+                    for msg in (
+                        AIMessage(content=ai_thought_len_tool_calls_out_of_range),
+                        SystemMessage(
+                            content=f"You are expected to call between "
+                            f"{state['model_settings'].min_tool_calls} and "
+                            f"{state['model_settings'].max_tool_calls}. "
+                            f"But you called {len_call_tools} tool(s)."
+                        ),
+                    )
+                ]
+            )
             prompt = ChatPromptTemplate.from_messages(messages)
 
-            if state["is_missing_tool_call"]:
-                logger.warning("Missing tool call. Reprompting")
-                prompt.append(
-                    SystemMessage(
-                        content="You are not calling any tools, and the game has not yet ended. You put your command in **Actions** but forgot to also put it in tool calls. Call some tools."
-                    )
+            if state["ai_thoughts_len_tool_calls_out_of_range"]:
+                logger.warning(
+                    f"Length of tool calls is out of range. Reprompting ({len(state['ai_thoughts_len_tool_calls_out_of_range'])})"
                 )
 
             chain = prompt | llm_with_tools
@@ -191,22 +203,35 @@ class MCPClient:
             ]
 
             return {
-                "is_missing_tool_call": False,
                 "tool_calls": tool_calls,
                 "tool_calls_parent": tool_call_result_node,
-                "tool_call_result_history_tree": ToolCallResultNodeUpdate.Pop(),
                 "current_step": state["current_step"] + 1,
+                "last_ai_thought": ai_message_result.content,
             }
 
-        def handle_missing_tool_call(state: State) -> StateUpdate:
-            logger.warning("LLM did not call any tool.")
+        def handle_len_tool_calls_out_of_range(state: State) -> StateUpdate:
+            logger.warning(
+                f"LLM is expected to call between {state['model_settings'].min_tool_calls} "
+                f"and {state['model_settings'].max_tool_calls} tool(s) but it called "
+                f"{len(state['tool_calls'])} tool(s)."
+            )
+            assert state["last_ai_thought"] is not None
             return {
-                "is_missing_tool_call": True,
-                "missing_tool_call_count": state["missing_tool_call_count"] + 1,
+                "len_tool_calls_out_of_range_count": state[
+                    "len_tool_calls_out_of_range_count"
+                ]
+                + 1,
+                "ai_thoughts_len_tool_calls_out_of_range": state[
+                    "ai_thoughts_len_tool_calls_out_of_range"
+                ]
+                + [(len(state["tool_calls"]), state["last_ai_thought"])],
             }
 
         def should_continue(state: State) -> ACTIONS_AFTER_LLM_CALL:
-            if state["missing_tool_call_count"] > state["missing_tool_call_threshold"]:
+            if (
+                len(state["ai_thoughts_len_tool_calls_out_of_range"])
+                >= state["len_tool_calls_out_of_range_threshold"]
+            ):
                 logger.warning("Reaching hallucination threshold. Ending the game.")
                 return "END_AND_SUMMARIZE"
             elif state["current_step"] > state["maximum_step"]:
@@ -214,10 +239,14 @@ class MCPClient:
                     f"Reaching maximum step ({state['maximum_step']}). Ending the game."
                 )
                 return "END_AND_SUMMARIZE"
-            elif state["tool_calls"]:
+            elif (
+                state["model_settings"].min_tool_calls
+                <= len(state["tool_calls"])
+                <= state["model_settings"].max_tool_calls
+            ):
                 return "CALL_TOOLS"
             else:
-                return "HANDLE_MISSING_TOOL_CALL"
+                return "HANDLE_LEN_TOOL_CALLS_OUT_OF_RANGE"
 
         async def call_tools(state: State) -> StateUpdate:
             logger.info(f"Executing {call_tools.__name__}: {state['current_step']}")
@@ -225,7 +254,11 @@ class MCPClient:
             for tool in state["tool_calls"]:
                 tool_call_results.append(await self.call_tool(tool))
 
-            return {"tool_call_results": tool_call_results}
+            return {
+                "tool_call_result_history_tree": ToolCallResultNodeUpdate.Pop(),
+                "tool_call_results": tool_call_results,
+                "ai_thoughts_len_tool_calls_out_of_range": [],
+            }
 
         async def prune_tool_call_results(state: State) -> StateUpdate:
             tool_call_results = state["tool_call_results"]
@@ -329,18 +362,20 @@ class MCPClient:
         graph.add_node("call_tools", call_tools)
         graph.add_node("prune_tool_call_results", prune_tool_call_results)
         graph.add_node("end_and_summarize", end_and_summarize)
-        graph.add_node("handle_missing_tool_call", handle_missing_tool_call)
+        graph.add_node(
+            "handle_len_tool_calls_out_of_range", handle_len_tool_calls_out_of_range
+        )
 
         graph.add_edge(START, "call_llm")
         path_map: dict[ACTIONS_AFTER_LLM_CALL, str] = {
             "CALL_TOOLS": "call_tools",
             "END_AND_SUMMARIZE": "end_and_summarize",
-            "HANDLE_MISSING_TOOL_CALL": "handle_missing_tool_call",
+            "HANDLE_LEN_TOOL_CALLS_OUT_OF_RANGE": "handle_len_tool_calls_out_of_range",
         }
         graph.add_conditional_edges(
             "call_llm", should_continue, cast(dict[Hashable, str], path_map)
         )
-        graph.add_edge("handle_missing_tool_call", "call_llm")
+        graph.add_edge("handle_len_tool_calls_out_of_range", "call_llm")
         graph.add_edge("call_tools", "prune_tool_call_results")
         graph.add_edge("prune_tool_call_results", "call_llm")
         graph.add_edge("end_and_summarize", END)
@@ -389,9 +424,11 @@ async def run_client(
     prompt_template: str,
     game_name: str,
     maximum_step: int,
-    missing_tool_call_threshold: int,
+    len_tool_calls_out_of_range_threshold: int,
     history_max_length: int,
     max_branch_per_node: int,
+    min_tool_calls: int,
+    max_tool_calls: int,
     iterations: int,
     config: RunnableConfig,
 ) -> None:
@@ -422,7 +459,9 @@ async def run_client(
                 prompt_template=prompt_template,
                 game_name=game_name,
                 maximum_step=maximum_step,
-                missing_tool_call_threshold=missing_tool_call_threshold,
+                len_tool_calls_out_of_range_threshold=len_tool_calls_out_of_range_threshold,
+                min_tool_calls=min_tool_calls,
+                max_tool_calls=max_tool_calls,
                 history_max_length=history_max_length,
                 max_branch_per_node=max_branch_per_node,
             ),

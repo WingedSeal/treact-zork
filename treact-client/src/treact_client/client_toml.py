@@ -11,9 +11,11 @@ class ClientConfig(BaseModel):
     prompt_template: str
     game_name: str
     maximum_step: int
-    missing_tool_call_threshold: int
+    len_tool_calls_out_of_range_threshold: int
     history_max_length: int
     max_branch_per_node: int
+    min_tool_calls: int
+    max_tool_calls: int
 
 
 class ExecuteConfig(BaseModel):
@@ -31,9 +33,11 @@ class TOMLTypedDict(TypedDict):
     prompt_template: str
     game_name: str
     maximum_step: int
-    missing_tool_call_threshold: int
+    len_tool_calls_out_of_range_threshold: int
     history_max_length: int
     max_branch_per_node: int
+    min_tool_calls: int
+    max_tool_calls: int
     iterations: int
     config: RunnableConfig
 
@@ -64,9 +68,11 @@ def parse_toml_config(toml_path: Path) -> TOMLTypedDict:
         "prompt_template": prompt_template_content,
         "game_name": config.client.game_name,
         "maximum_step": config.client.maximum_step,
-        "missing_tool_call_threshold": config.client.missing_tool_call_threshold,
+        "len_tool_calls_out_of_range_threshold": config.client.len_tool_calls_out_of_range_threshold,
         "history_max_length": config.client.history_max_length,
         "max_branch_per_node": config.client.max_branch_per_node,
+        "min_tool_calls": config.client.min_tool_calls,
+        "max_tool_calls": config.client.max_tool_calls,
         "iterations": config.execute.iterations,
         "config": config.config,
     }
