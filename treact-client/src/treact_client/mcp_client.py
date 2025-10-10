@@ -245,6 +245,8 @@ class MCPClient:
                 <= state["model_settings"].max_tool_calls
             ):
                 return "CALL_TOOLS"
+            elif state["current_step"] == 1:
+                return "CALL_TOOLS"  # Bypass range check
             else:
                 return "HANDLE_LEN_TOOL_CALLS_OUT_OF_RANGE"
 
