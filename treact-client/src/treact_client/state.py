@@ -79,6 +79,8 @@ def update_tool_call_result_history(
         case ToolCallResultNodeUpdate.PutBack(items):
             for item in items:
                 current_queue.put_nowait(item)
+        case _:
+            raise NotImplementedError("ToolCallResultNodeUpdate.BaseUpdate not handled")
     return current_queue
 
 
