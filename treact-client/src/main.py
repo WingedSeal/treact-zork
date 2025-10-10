@@ -1,7 +1,9 @@
 import argparse
+import os
 from pathlib import Path
 from time import perf_counter
 
+os.environ["GRPC_VERBOSITY"] = "NONE"
 start = perf_counter()
 print("Importing treact_client")
 from treact_client import run_client_file
