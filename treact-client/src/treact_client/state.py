@@ -67,7 +67,7 @@ T = TypeVar("T", bound=PeekableQueue[ToolCallResultNode])
 
 def update_tool_call_result_history(
     current_queue: T,
-    update: ToolCallResultNodeUpdate.BaseUpdate,
+    update: ToolCallResultNodeUpdate.BaseUpdate | T,
 ) -> T:
     match update:
         case ToolCallResultNodeUpdate.Pop():
@@ -79,8 +79,10 @@ def update_tool_call_result_history(
         case ToolCallResultNodeUpdate.PutBack(items):
             for item in items:
                 current_queue.put_nowait(item)
+        case PeekableQueue():
+            return update
         case _:
-            raise NotImplementedError("ToolCallResultNodeUpdate.BaseUpdate not handled")
+            raise NotImplementedError(f"ToolCallResultNodeUpdate.BaseUpdate not handled: {update}")
     return current_queue
 
 
