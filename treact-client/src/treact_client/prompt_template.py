@@ -36,3 +36,25 @@ Summarize the following history of commands and responses from playing zork in J
 ** History **
     {tool_call_result_history}
 """
+
+PRUNE_HISTORY = """
+Given the thought and tool call results history from playing Zork below
+
+** Thought **
+{thought}
+
+** Tool call results **
+{tool_call_result}
+
+Please prune the tool call results to return the list of tool call results within limit number of {max_branch_per_node} or less.
+
+** Important Notes **
+- During pruning, prioritize retaining tool call results that provide significant information about the game's progress, such as those that reveal new locations, items acquired, or major events.
+"""
+
+FINAL_NODE = """
+From the following leaf nodes representing different possible game states in Zork, select the node that maximizes the game's progress based on the current score and game completion status.
+** Leaf Nodes **
+{leaf_nodes}
+
+"""

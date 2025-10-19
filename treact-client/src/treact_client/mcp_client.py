@@ -38,7 +38,7 @@ from tqdm import tqdm
 from treact_client.client_toml import parse_toml_config
 
 from . import prompt_template
-from .ai_model_response import AIModelResponse
+from .ai_model_response import AIModelResponse, PruneResponse, FinalNodeResponse
 from .csv_logger import CSVLogger
 from .exceptions import (
     InvalidToolCallResultException,
@@ -267,18 +267,46 @@ class MCPClient:
 
             # TODO: evaluate good nodes
 
-            if len(tool_call_results) > state["model_settings"].max_branch_per_node:
+            if len(tool_call_results) > state["model_settings"].max_branch_per_node and len(tool_call_results) > state["model_settings"].max_tool_calls:
                 raise MaxBranchPerNodeExceededException(
                     len(tool_call_results), state["model_settings"].max_branch_per_node
                 )
-            return {
-                "tool_call_result_history_tree": ToolCallResultNodeUpdate.PutBack(
-                    [
-                        ToolCallResultNode(tool_call_result, state["tool_calls_parent"])
-                        for tool_call_result in tool_call_results
-                    ]
-                ),
-            }
+            if len(tool_call_results) > state["model_settings"].max_branch_per_node:
+                logger.info("Pruning tool call results history.")
+                llm_with_structured_output = state["model_settings"].llm.with_structured_output(PruneResponse)
+
+                prompt = PromptTemplate.from_template(prompt_template.PRUNE_HISTORY)
+                chain = prompt | llm_with_structured_output
+                prune_model_response = cast(
+                    PruneResponse,
+                    await chain.ainvoke(
+                        {
+                            "thought": state["last_ai_thought"],
+                            "tool_call_result": tool_call_results,
+                            "max_branch_per_node": state["model_settings"].max_branch_per_node
+                            
+                        }
+                    ),
+                )
+                logger.info(f"Pruned History: {prune_model_response.pruned_history}")
+                logger.info(f"Number of pruned tool call results: {len(prune_model_response.pruned_history)}")
+                return {
+                    "tool_call_result_history_tree": ToolCallResultNodeUpdate.PutBack(
+                        [
+                            ToolCallResultNode(tool_call_result, state["tool_calls_parent"])
+                            for tool_call_result in prune_model_response.pruned_history
+                        ]
+                    ),
+                }
+            else:
+                return {
+                    "tool_call_result_history_tree": ToolCallResultNodeUpdate.PutBack(
+                        [
+                            ToolCallResultNode(tool_call_result, state["tool_calls_parent"])
+                            for tool_call_result in tool_call_results
+                        ]
+                    ),
+                }
 
         async def end_and_summarize(state: State) -> StateUpdate:
             logger.info(f"Executing {call_tools.__name__}: {state['current_step']}")
@@ -293,10 +321,27 @@ class MCPClient:
                 f"{len(tool_call_result_nodes)} leaf node(s) are left in the history tree."
             )
             logger.debug(f"ToolCallResultNodes are {tool_call_result_nodes}")
+            if len(tool_call_result_nodes) == 0:
+                raise Exception("No tool call result nodes found.")
+            if len(tool_call_result_nodes) > 1:
+                logger.warning(
+                    "Multiple leaf nodes found. Selecting the first one as the chosen node."
+                )
+                llm_with_structured_output = state["model_settings"].llm.with_structured_output(FinalNodeResponse)
 
-            chosen_tool_call_result_node = tool_call_result_nodes[
-                0
-            ]  # TODO: Evaluate the best node
+                prompt = PromptTemplate.from_template(prompt_template.FINAL_NODE)
+                chain = prompt | llm_with_structured_output
+                final_node_response = cast(
+                    FinalNodeResponse,
+                    await chain.ainvoke(
+                        {
+                            "leaf_nodes": tool_call_result_nodes,
+                        }
+                    ),
+                )
+                chosen_tool_call_result_node = final_node_response.final_node
+            else:
+                chosen_tool_call_result_node = tool_call_result_nodes[0]  # TODO: Evaluate the best node
 
             logger.info(f"The chosen node is {chosen_tool_call_result_node}")
 

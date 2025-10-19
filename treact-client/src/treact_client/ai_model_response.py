@@ -1,6 +1,7 @@
 from typing import TypeAlias
 
 from pydantic import BaseModel, Field
+from treact_client.tool_call import ToolCallResult, ToolCallResultNode
 
 
 class AIModelResponseTypes:
@@ -68,4 +69,22 @@ class AIModelResponse(BaseModel):
 
     move: AIModelResponseTypes.move = Field(
         description="The current move number in the Zork game, indicating how many valid actions have been taken."
+    )
+
+class PruneResponse(BaseModel):
+    """
+    Represents the return response after pruning game response history.
+    """
+
+    pruned_history: list[ToolCallResult] = Field(
+        description="The pruned history of tool call results after applying the pruning strategy."
+    )
+
+class FinalNodeResponse(BaseModel):
+    """
+    Represents the chosen final node response that maximizes the game's progress.
+    """
+
+    final_node: ToolCallResultNode = Field(
+        description="The final ToolCallResultNode selected for maximizing game progress."
     )

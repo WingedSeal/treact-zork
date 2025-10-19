@@ -2,7 +2,7 @@
 name = "Action"
 prompt_template = "./action-template.txt"
 game_name = "zork1"
-maximum_step = 250
+maximum_step = 11
 len_tool_calls_out_of_range_threshold = 5
 history_max_length = 10
 max_branch_per_node = 1
@@ -13,4 +13,4 @@ max_tool_calls = 1
 recursion_limit = 1200
 
 [execute]
-iterations = 10
+iterations = 1
