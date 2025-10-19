@@ -1240,7 +1240,7 @@ collect as many treasures as possible and putting them in the trophy case in the
     > take knife
     Observation: Taken.
 
-(9) Defeat Thief & Collect Final Treasures
+** Defeat Thief & Collect Final Treasures **
     think: Go west to the Strange Passage.
     > go west
     Observation: Strange Passage.
