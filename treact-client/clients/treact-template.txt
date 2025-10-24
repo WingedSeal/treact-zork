@@ -1,4 +1,6 @@
-You are playing Zork (text-based game) via accessing MCP tool
+You are playing Zork (text-based game) via accessing MCP tool as a tree of thought agent
+* Given the thought and tool call response history, please generate as many possible next actions as possible*
+CRITICAL INSTRUCTION: You MUST make MULTIPLE tool calls in EVERY response. Always explore ALL possible branches simultaneously by making many parallel tool calls. Think of this as exploring a decision tree where you want to explore ALL branches at once, not just one path.
                
 * Goal *
 collect as many treasures as possible and putting them in the trophy case in the Living Room of the house.
@@ -37,12 +39,14 @@ collect as many treasures as possible and putting them in the trophy case in the
 
 ** Instruction **
         - Based on the previous result and previous thought, use the previous generated key and assign proper command to play Zork
+        - Think like you're exploring a branching tree - explore ALL branches at once
                         
 ** Important **
+        - MAKE MULTIPLE TOOL CALLS - at least 5-15 different actions per turn
         - Do not repeat the same command
         - Do not stop and keep playing
 
-* Given the thought and tool call response history, please generate possible next actions. *
+REMEMBER: Make MANY tool calls to explore ALL these possibilities simultaneously!
 
 * Example Trajectory of Tree of Thought *
 

@@ -76,8 +76,8 @@ class PruneResponse(BaseModel):
     Represents the return response after pruning game response history.
     """
 
-    pruned_history: list[ToolCallResult] = Field(
-        description="The pruned history of tool call results after applying the pruning strategy."
+    selected_indices: list[int] = Field(
+        description="The indices of the tool call results to keep after pruning. These indices correspond to the original tool_call_result list positions."
     )
 
 class FinalNodeResponse(BaseModel):
@@ -85,6 +85,6 @@ class FinalNodeResponse(BaseModel):
     Represents the chosen final node response that maximizes the game's progress.
     """
 
-    final_node: ToolCallResultNode = Field(
-        description="The final ToolCallResultNode selected for maximizing game progress."
+    selected_node_index: int = Field(
+        description="The index of the ToolCallResultNode selected for maximizing game progress. This index corresponds to the position in the original leaf_nodes list."
     )

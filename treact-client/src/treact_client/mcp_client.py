@@ -275,6 +275,15 @@ class MCPClient:
                 logger.info("Pruning tool call results history.")
                 llm_with_structured_output = state["model_settings"].llm.with_structured_output(PruneResponse)
 
+                # Create indexed representation for the LLM
+                tool_call_result_with_indices = []
+                for i, result in enumerate(tool_call_results):
+                    tool_call_result_with_indices.append(
+                        f"Index {i}: Tool: {result.tool_name}, "
+                        f"Arguments: {result.arguments}, "
+                        f"Response: {str(result.tool_server_response)}" 
+                    )
+
                 prompt = PromptTemplate.from_template(prompt_template.PRUNE_HISTORY)
                 chain = prompt | llm_with_structured_output
                 prune_model_response = cast(
@@ -282,19 +291,27 @@ class MCPClient:
                     await chain.ainvoke(
                         {
                             "thought": state["last_ai_thought"],
-                            "tool_call_result": tool_call_results,
+                            "tool_call_result_with_indices": "\n".join(tool_call_result_with_indices),
                             "max_branch_per_node": state["model_settings"].max_branch_per_node
-                            
                         }
                     ),
                 )
-                logger.info(f"Pruned History: {prune_model_response.pruned_history}")
-                logger.info(f"Number of pruned tool call results: {len(prune_model_response.pruned_history)}")
+                
+                # Select the original tool call results based on the returned indices
+                pruned_tool_call_results = [
+                    tool_call_results[i] for i in prune_model_response.selected_indices
+                    if 0 <= i < len(tool_call_results)
+                ]
+                
+                logger.info(f"Selected indices: {prune_model_response.selected_indices}")
+                logger.info(f"Number of pruned tool call results: {len(pruned_tool_call_results)}")
+                logger.debug(f"Pruned Tool Call Results: {pruned_tool_call_results}")
+                
                 return {
                     "tool_call_result_history_tree": ToolCallResultNodeUpdate.PutBack(
                         [
                             ToolCallResultNode(tool_call_result, state["tool_calls_parent"])
-                            for tool_call_result in prune_model_response.pruned_history
+                            for tool_call_result in pruned_tool_call_results
                         ]
                     ),
                 }
@@ -325,9 +342,19 @@ class MCPClient:
                 raise Exception("No tool call result nodes found.")
             if len(tool_call_result_nodes) > 1:
                 logger.warning(
-                    "Multiple leaf nodes found. Selecting the first one as the chosen node."
+                    "Multiple leaf nodes found. Using LLM to select the best node."
                 )
                 llm_with_structured_output = state["model_settings"].llm.with_structured_output(FinalNodeResponse)
+
+                # Create indexed representation for the LLM
+                leaf_nodes_with_indices = []
+                for i, node in enumerate(tool_call_result_nodes):
+                    result = node.tool_call_result
+                    leaf_nodes_with_indices.append(
+                        f"Index {i}: Tool: {result.tool_name}, "
+                        f"Arguments: {result.arguments}, "
+                        f"Response: {str(result.tool_server_response)}" 
+                    )
 
                 prompt = PromptTemplate.from_template(prompt_template.FINAL_NODE)
                 chain = prompt | llm_with_structured_output
@@ -335,11 +362,19 @@ class MCPClient:
                     FinalNodeResponse,
                     await chain.ainvoke(
                         {
-                            "leaf_nodes": tool_call_result_nodes,
+                            "leaf_nodes_with_indices": "\n".join(leaf_nodes_with_indices),
                         }
                     ),
                 )
-                chosen_tool_call_result_node = final_node_response.final_node
+                
+                # Select the original node based on the returned index
+                selected_index = final_node_response.selected_node_index
+                if 0 <= selected_index < len(tool_call_result_nodes):
+                    chosen_tool_call_result_node = tool_call_result_nodes[selected_index]
+                    logger.info(f"Selected node index: {selected_index}")
+                else:
+                    logger.warning(f"Invalid index {selected_index}, using first node as fallback")
+                    chosen_tool_call_result_node = tool_call_result_nodes[0]
             else:
                 chosen_tool_call_result_node = tool_call_result_nodes[0]  # TODO: Evaluate the best node
 

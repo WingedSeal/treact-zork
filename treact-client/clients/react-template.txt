@@ -1482,6 +1482,6 @@ collect as many treasures as possible and putting them in the trophy case in the
     > go southwest
     Observation: A hidden trail descends.
 
-    think: Go west to enter the Stone Barrow and complete the game.
+    think: Go west to enter the Stone Barrow
     > go west
-    Observation: You enter the Stone Barrow. Congratulations! You've completed Zork I!
+    Observation: You enter the Stone Barrow.

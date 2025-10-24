@@ -38,23 +38,37 @@ Summarize the following history of commands and responses from playing zork in J
 """
 
 PRUNE_HISTORY = """
-Given the thought and tool call results history from playing Zork below
+Given the thought and tool call results history from playing Zork below, select which tool call results to keep.
 
 ** Thought **
 {thought}
 
-** Tool call results **
-{tool_call_result}
+** Tool call results (with indices) **
+{tool_call_result_with_indices}
 
-Please prune the tool call results to return the list of tool call results within limit number of {max_branch_per_node} or less.
+Please select up to {max_branch_per_node} tool call results that should be kept.
+Return the indices (0-based) of the tool call results you want to preserve.
 
 ** Important Notes **
-- During pruning, prioritize retaining tool call results that provide significant information about the game's progress, such as those that reveal new locations, items acquired, or major events.
+- During pruning, prioritize retaining tool call results that provide significant information about the game's progress
+- Keep results that reveal new locations, items acquired, or major game events
+- Prefer results that advance the story or provide new strategic information
+- Return indices as a list of integers (e.g., [0, 2, 4] to keep the 1st, 3rd, and 5th results)
+- You can select up to {max_branch_per_node} results
 """
 
 FINAL_NODE = """
 From the following leaf nodes representing different possible game states in Zork, select the node that maximizes the game's progress based on the current score and game completion status.
-** Leaf Nodes **
-{leaf_nodes}
 
+** Leaf Nodes (with indices) **
+{leaf_nodes_with_indices}
+
+Please select the index (0-based) of the leaf node that represents the best game state.
+Consider factors like:
+- Current score (higher is better)
+- Progress toward treasures
+- Strategic position in the game
+- Information gained
+
+Return the index as an integer (e.g., 0 for the first node, 1 for the second, etc.)
 """

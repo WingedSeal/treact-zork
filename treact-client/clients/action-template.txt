@@ -1061,7 +1061,7 @@ collect as many treasures as possible and putting them in the trophy case in the
     > put skull in case
     Observation: Done.
 
-** Get Platinum Bar & Complete Game **
+** Get Platinum Bar**
     > go down
     Observation: Cellar.
 
@@ -1126,4 +1126,4 @@ collect as many treasures as possible and putting them in the trophy case in the
     Observation: A hidden trail descends.
 
     > go west
-    Observation: You enter the Stone Barrow. Congratulations! You've completed Zork I!
+    Observation: You enter the Stone Barrow.
