@@ -50,9 +50,15 @@ Select the most promising tool call results for continuing the Zork game.
 
 ** Instructions **
 Select UP TO {max_branch_per_node} indices that show the best progress toward collecting treasures.
+
+** CRITICAL: Quality-based selection **
+- If other nodes already have higher scores or better positions, be MORE selective
+- Only choose results that could realistically compete with or complement other nodes
+- If current results are clearly inferior to other nodes, choose fewer branches (even 0 if all are poor)
+
 Consider both the quality of results AND avoiding redundancy with other nodes being explored.
 
-Return as a list of integers: [index1, index2, ...]
+Return as a list of integers: [index1, index2, ...] or empty list [] if no results are worth pursuing.
 """
 
 FINAL_NODE = """

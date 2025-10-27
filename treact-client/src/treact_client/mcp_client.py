@@ -288,6 +288,16 @@ class MCPClient:
                         f"Response: {str(result.tool_server_response)}" 
                     )
 
+                other_nodes_context = []
+                if current_tree_nodes:
+                    for idx, node in enumerate(current_tree_nodes):
+                        response_str = str(node.tool_call_result.tool_server_response)
+                        node_summary = f"Node {idx + 1}: {node.tool_call_result.tool_name} -> {response_str}"
+                        other_nodes_context.append(node_summary)
+
+                other_nodes_context_str = "\n".join(other_nodes_context) if other_nodes_context else "No other nodes in queue"
+                logger.info(f"Other nodes context for pruning:\n{other_nodes_context_str}")
+
                 prompt = PromptTemplate.from_template(prompt_template.PRUNE_HISTORY)
                 chain = prompt | llm_with_structured_output
                 prune_model_response = cast(
@@ -299,7 +309,7 @@ class MCPClient:
                             "max_branch_per_node": adaptive_max_branches,
                             "total_results": len(tool_call_results),
                             "remaining_nodes": remaining_nodes,
-                            "other_nodes_context": current_tree_nodes,
+                            "other_nodes_context": other_nodes_context_str
                         }
                     ),
                 )
