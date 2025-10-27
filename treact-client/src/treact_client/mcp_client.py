@@ -314,13 +314,17 @@ class MCPClient:
                     ),
                 )
                 
+                valid_indices = [
+                    i for i in prune_model_response.selected_indices
+                    if 0 <= i < len(tool_call_results)
+                ][:adaptive_max_branches] 
                 
                 pruned_tool_call_results = [
-                    tool_call_results[i] for i in prune_model_response.selected_indices
+                    tool_call_results[i] for i in valid_indices
                 ]
 
-                logger.info(f"Selected indices {prune_model_response.selected_indices} from {len(tool_call_results)} results")
-                logger.info(f"Pruned to {len(pruned_tool_call_results)} branches")
+                logger.info(f"LLM selected indices {prune_model_response.selected_indices}, using valid indices {valid_indices} from {len(tool_call_results)} results")
+                logger.info(f"Pruned to {len(pruned_tool_call_results)} branches (limited to {adaptive_max_branches})")
                 logger.debug(f"Pruned Tool Call Results: {pruned_tool_call_results}")
                 
                 return {
