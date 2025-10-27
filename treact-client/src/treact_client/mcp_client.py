@@ -270,7 +270,7 @@ class MCPClient:
             base_max_branches = state["model_settings"].max_branch_per_node
             
             if remaining_nodes > 0:
-                adaptive_max_branches = max(1, base_max_branches // (remaining_nodes + 1))
+                adaptive_max_branches = max(1, base_max_branches - remaining_nodes)
                 logger.info(f"Adaptive pruning: {remaining_nodes} nodes remaining, max_branches adapted from {base_max_branches} to {adaptive_max_branches}")
             else:
                 adaptive_max_branches = base_max_branches
