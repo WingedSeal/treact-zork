@@ -264,18 +264,22 @@ class MCPClient:
 
         async def prune_tool_call_results(state: State) -> StateUpdate:
             tool_call_results = state["tool_call_results"]
+            current_tree_nodes = list(state["tool_call_result_history_tree"].queue)
+            remaining_nodes = len(current_tree_nodes)
+        
+            base_max_branches = state["model_settings"].max_branch_per_node
+            
+            if remaining_nodes > 0:
+                adaptive_max_branches = max(1, base_max_branches // (remaining_nodes + 1))
+                logger.info(f"Adaptive pruning: {remaining_nodes} nodes remaining, max_branches adapted from {base_max_branches} to {adaptive_max_branches}")
+            else:
+                adaptive_max_branches = base_max_branches
+                logger.info(f"Single node pruning: using full max_branches {adaptive_max_branches}")
 
-            # TODO: evaluate good nodes
-
-            if len(tool_call_results) > state["model_settings"].max_branch_per_node and len(tool_call_results) > state["model_settings"].max_tool_calls:
-                raise MaxBranchPerNodeExceededException(
-                    len(tool_call_results), state["model_settings"].max_branch_per_node
-                )
-            if len(tool_call_results) > state["model_settings"].max_branch_per_node:
-                logger.info("Pruning tool call results history.")
+            if len(tool_call_results) > adaptive_max_branches:
+                logger.info(f"Pruning: {len(tool_call_results)} results to {adaptive_max_branches} branches")
                 llm_with_structured_output = state["model_settings"].llm.with_structured_output(PruneResponse)
-
-                # Create indexed representation for the LLM
+                
                 tool_call_result_with_indices = []
                 for i, result in enumerate(tool_call_results):
                     tool_call_result_with_indices.append(
@@ -292,19 +296,20 @@ class MCPClient:
                         {
                             "thought": state["last_ai_thought"],
                             "tool_call_result_with_indices": "\n".join(tool_call_result_with_indices),
-                            "max_branch_per_node": state["model_settings"].max_branch_per_node
+                            "max_branch_per_node": adaptive_max_branches,
+                            "total_results": len(tool_call_results),
+                            "remaining_nodes": remaining_nodes
                         }
                     ),
                 )
                 
-                # Select the original tool call results based on the returned indices
+                
                 pruned_tool_call_results = [
                     tool_call_results[i] for i in prune_model_response.selected_indices
-                    if 0 <= i < len(tool_call_results)
                 ]
-                
-                logger.info(f"Selected indices: {prune_model_response.selected_indices}")
-                logger.info(f"Number of pruned tool call results: {len(pruned_tool_call_results)}")
+
+                logger.info(f"Selected indices {prune_model_response.selected_indices} from {len(tool_call_results)} results")
+                logger.info(f"Pruned to {len(pruned_tool_call_results)} branches")
                 logger.debug(f"Pruned Tool Call Results: {pruned_tool_call_results}")
                 
                 return {

@@ -38,23 +38,21 @@ Summarize the following history of commands and responses from playing zork in J
 """
 
 PRUNE_HISTORY = """
-Given the thought and tool call results history from playing Zork below, select which tool call results to keep.
+Select the most promising tool call results for continuing the Zork game.
 
-** Thought **
-{thought}
+** Previous thought: {thought}
 
 ** Tool call results (with indices) **
 {tool_call_result_with_indices}
 
-Please select up to {max_branch_per_node} tool call results that should be kept.
-Return the indices (0-based) of the tool call results you want to preserve.
+** Instructions **
+Select UP TO {max_branch_per_node} indices that show the best progress toward collecting treasures.
+Focus on results that:
+- Advance toward treasures
+- Discover new locations or items
+- Provide useful game information
 
-** Important Notes **
-- During pruning, prioritize retaining tool call results that provide significant information about the game's progress
-- Keep results that reveal new locations, items acquired, or major game events
-- Prefer results that advance the story or provide new strategic information
-- Return indices as a list of integers (e.g., [0, 2, 4] to keep the 1st, 3rd, and 5th results)
-- You can select up to {max_branch_per_node} results
+Return as a list of integers: [index1, index2, ...]
 """
 
 FINAL_NODE = """
