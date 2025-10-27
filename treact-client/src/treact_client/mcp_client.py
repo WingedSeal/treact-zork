@@ -298,7 +298,8 @@ class MCPClient:
                             "tool_call_result_with_indices": "\n".join(tool_call_result_with_indices),
                             "max_branch_per_node": adaptive_max_branches,
                             "total_results": len(tool_call_results),
-                            "remaining_nodes": remaining_nodes
+                            "remaining_nodes": remaining_nodes,
+                            "other_nodes_context": current_tree_nodes,
                         }
                     ),
                 )

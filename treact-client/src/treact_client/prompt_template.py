@@ -42,15 +42,15 @@ Select the most promising tool call results for continuing the Zork game.
 
 ** Previous thought: {thought}
 
-** Tool call results (with indices) **
+** Other nodes currently being explored: **
+{other_nodes_context}
+
+** Current node's results (with indices) **
 {tool_call_result_with_indices}
 
 ** Instructions **
 Select UP TO {max_branch_per_node} indices that show the best progress toward collecting treasures.
-Focus on results that:
-- Advance toward treasures
-- Discover new locations or items
-- Provide useful game information
+Consider both the quality of results AND avoiding redundancy with other nodes being explored.
 
 Return as a list of integers: [index1, index2, ...]
 """
