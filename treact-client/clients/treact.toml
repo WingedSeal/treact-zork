@@ -5,7 +5,7 @@ game_name = "zork1"
 maximum_step = 250
 len_tool_calls_out_of_range_threshold = 5
 history_max_length = 10
-max_branch_per_node = 3
+max_branch_per_node = 5
 min_tool_calls = 1
 max_tool_calls = 15
 
