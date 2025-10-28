@@ -10,7 +10,7 @@ min_tool_calls = 1
 max_tool_calls = 15
 
 [config]
-recursion_limit = 1200
+recursion_limit = 2500
 
 [execute]
 iterations = 10
