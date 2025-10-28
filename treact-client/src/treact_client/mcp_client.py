@@ -267,7 +267,7 @@ class MCPClient:
             current_tree_nodes = list(state["tool_call_result_history_tree"].queue)
             remaining_nodes = len(current_tree_nodes)
         
-            base_max_branches = state["model_settings"].max_branch_per_node
+            base_max_branches = state["model_settings"].max_branch_per_layer
             
             if remaining_nodes > 0:
                 adaptive_max_branches = max(1, base_max_branches - remaining_nodes)
@@ -306,7 +306,7 @@ class MCPClient:
                         {
                             "thought": state["last_ai_thought"],
                             "tool_call_result_with_indices": "\n".join(tool_call_result_with_indices),
-                            "max_branch_per_node": adaptive_max_branches,
+                            "max_branch_per_layer": adaptive_max_branches,
                             "total_results": len(tool_call_results),
                             "remaining_nodes": remaining_nodes,
                             "other_nodes_context": other_nodes_context_str
@@ -530,6 +530,7 @@ async def run_client(
     len_tool_calls_out_of_range_threshold: int,
     history_max_length: int,
     max_branch_per_node: int,
+    max_branch_per_layer: int,
     min_tool_calls: int,
     max_tool_calls: int,
     iterations: int,
@@ -567,6 +568,7 @@ async def run_client(
                 max_tool_calls=max_tool_calls,
                 history_max_length=history_max_length,
                 max_branch_per_node=max_branch_per_node,
+                max_branch_per_layer=max_branch_per_layer,
             ),
             config=config,
         )

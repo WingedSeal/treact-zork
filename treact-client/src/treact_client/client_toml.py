@@ -14,6 +14,7 @@ class ClientConfig(BaseModel):
     len_tool_calls_out_of_range_threshold: int
     history_max_length: int
     max_branch_per_node: int
+    max_branch_per_layer: int
     min_tool_calls: int
     max_tool_calls: int
 
@@ -36,6 +37,7 @@ class TOMLTypedDict(TypedDict):
     len_tool_calls_out_of_range_threshold: int
     history_max_length: int
     max_branch_per_node: int
+    max_branch_per_layer: int
     min_tool_calls: int
     max_tool_calls: int
     iterations: int
@@ -71,6 +73,7 @@ def parse_toml_config(toml_path: Path) -> TOMLTypedDict:
         "len_tool_calls_out_of_range_threshold": config.client.len_tool_calls_out_of_range_threshold,
         "history_max_length": config.client.history_max_length,
         "max_branch_per_node": config.client.max_branch_per_node,
+        "max_branch_per_layer": config.client.max_branch_per_layer,
         "min_tool_calls": config.client.min_tool_calls,
         "max_tool_calls": config.client.max_tool_calls,
         "iterations": config.execute.iterations,

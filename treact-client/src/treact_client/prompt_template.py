@@ -49,7 +49,7 @@ Select the most promising tool call results for continuing the Zork game.
 {tool_call_result_with_indices}
 
 ** Instructions **
-Select UP TO {max_branch_per_node} indices that show the best progress toward collecting treasures.
+Select UP TO {max_branch_per_layer} indices that show the best progress toward collecting treasures.
 
 ** CRITICAL: Quality-based selection **
 - If other nodes already have higher scores or better positions, be MORE selective

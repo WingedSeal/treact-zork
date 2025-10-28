@@ -32,6 +32,7 @@ class ModelSettings:
     """How many times can LLM call too many or too little tools in a row before aborting"""
     history_max_length: int
     max_branch_per_node: int  
+    max_branch_per_layer: int  
     """Total number of branches to maintain across each layer of the tree"""
     min_tool_calls: int
     max_tool_calls: int
