@@ -9174,7 +9174,7 @@ Select new state:
 > inventory
 > go north
 
-Observation: You enter the Stone Barrow. Congratulations! You've completed Zork I!
+Observation: You enter the Stone Barrow.
 Possible thoughts:
 - Thought 1: Navigation: From You enter the Stone Barrow, choose the best exit toward the next objective.
 - Thought 2: Puzzle hook: use the obvious affordance. Prepare the required tool/action.
