@@ -124,7 +124,6 @@ class MCPClient:
             llm_with_tools = llm.bind_tools(self.tools)
 
             template = state["model_settings"].prompt_template
-            # prompt = ChatPromptTemplate.from_template(template)
 
             tool_call_result_node: ToolCallResultNode = state[
                 "tool_call_result_history_tree"
@@ -168,9 +167,9 @@ class MCPClient:
 
             ai_message_result: BaseMessageChunk = AIMessageChunk(content="")
             logger.info("Thinking")
-            if env.API_KEY:
-                logger.debug("API_KEY detected. Sleeping to prevent API rate limit.")
-                time.sleep(8)  # Prevent Gemini from exploding
+            # if env.API_KEY:
+            #     logger.debug("API_KEY detected. Sleeping to prevent API rate limit.")
+            #     time.sleep(8)  # Prevent Gemini from exploding
 
             logger.debug("Thoughts:")
             async for chunk in chain.astream({}):
@@ -322,6 +321,17 @@ class MCPClient:
                 pruned_tool_call_results = [
                     tool_call_results[i] for i in valid_indices
                 ]
+
+
+                if len(pruned_tool_call_results) == 0:
+                    current_queue_size = len(list(state["tool_call_result_history_tree"].queue))
+                    if current_queue_size == 0:
+                        logger.warning("Pruning returned empty results and queue is empty! Using fallback to first max_branch results")
+                        fallback_count = min(adaptive_max_branches, len(tool_call_results))
+                        pruned_tool_call_results = tool_call_results[:fallback_count]
+                        logger.info(f"Fallback: Using first {len(pruned_tool_call_results)} results to prevent empty queue")
+                    else:
+                        logger.warning(f"Pruning returned empty results but queue has {current_queue_size} nodes, allowing empty result")
 
                 logger.info(f"LLM selected indices {prune_model_response.selected_indices}, using valid indices {valid_indices} from {len(tool_call_results)} results")
                 logger.info(f"Pruned to {len(pruned_tool_call_results)} branches (limited to {adaptive_max_branches})")
@@ -494,7 +504,31 @@ class MCPClient:
         content = call_tool_result.content[0]
         if not isinstance(content, TextContent):
             raise InvalidToolCallResultException(type(content))
-        server_response: ToolServerResponse = orjson.loads(content.text)
+        
+        # Debug logging for JSON parsing issues
+        logger.debug(f"Raw content from tool {tool.tool_name}: {repr(content.text)}")
+        
+        try:
+            server_response: ToolServerResponse = orjson.loads(content.text)
+        except orjson.JSONDecodeError as e:
+            logger.error(f"Failed to parse JSON response from tool {tool.tool_name}")
+            logger.error(f"Raw content: {repr(content.text)}")
+            logger.error(f"JSON error: {e}")
+            
+            # Detect hallucination and return structured response instead of crashing
+            logger.warning(f"LLM hallucinated tool: {tool.tool_name}")
+            return ToolCallResult(
+                tool_name=tool.tool_name,
+                arguments=tool.arguments,
+                ai_thought=tool.ai_thought,
+                tool_server_response={
+                    "hallucination": True,
+                    "error": f"Tool '{tool.tool_name}' does not exist",
+                    "available_tools": [t.name for t in self.tools],
+                    "raw_response": content.text
+                },
+            )
+            
         if tool.tool_name != "get-chat-log":
             logger.info(f"Tool Server Response: {server_response}.")
         return ToolCallResult(

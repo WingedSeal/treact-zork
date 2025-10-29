@@ -14,4 +14,4 @@ max_tool_calls = 15
 recursion_limit = 2500
 
 [execute]
-iterations = 10
+iterations = 5
