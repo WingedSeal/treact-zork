@@ -1,0 +1,10 @@
+Strategy,Set_Name,Game_Count,Mean_Score,Std_Score,Min_Score,Max_Score,Mean_Moves,Mean_Efficiency,High_Scorers,Elite_Scorers,Success_Rate
+Action,set1,9,89.22,37.6,55,174,118.22,0.8816,2,1,22.2
+Action,set2,12,77.83,22.7,45,115,114.25,0.9539,2,0,16.7
+Action,set3,10,84.8,31.96,55,150,113.3,1.0219,2,1,20.0
+REACT,set1,10,143.4,38.58,74,196,158.8,0.9819,9,4,90.0
+REACT,set2,10,109.9,53.97,44,220,138.8,0.9195,5,2,50.0
+REACT,set3,10,126,54.78,54,212,144.7,0.9392,7,3,70.0
+Standard,set1,10,41.8,4.59,35,49,65.6,0.871,0,0,0.0
+Standard,set2,10,44.3,3.68,40,50,60.9,1.1234,0,0,0.0
+Standard,set3,10,42.5,6.35,35,54,88.9,0.9047,0,0,0.0
