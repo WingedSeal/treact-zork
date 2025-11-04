@@ -1,0 +1,67 @@
+TREACT-3-sets-New Analysis Summary
+==================================
+
+Analysis completed on: November 4, 2025
+
+## Dataset Overview
+- Folder: TREACT-3-sets-New
+- Total sets analyzed: 3 (set1, set2, set3)
+- Total game sessions: 30 (10 per set)
+- Analysis method: Chat log parsing for score progression and death detection
+
+## Results Summary
+
+### Scores by Set:
+**Set 1:**
+- Max scores: 45, 49, 50, 50, 54, 54, 55, 60, 60
+- Average max score: 53.0
+- Highest score: 60 (achieved in games 2 and 9)
+
+**Set 2:**
+- Max scores: 44, 45, 50, 50, 54, 59, 69, 75, 79, 83
+- Average max score: 60.8
+- Highest score: 83 (achieved in game 9)
+
+**Set 3:**
+- Max scores: 39, 44, 54, 54, 60, 60, 69, 75
+- Average max score: 56.9
+- Highest score: 75 (achieved in game 4)
+
+### Overall Statistics:
+- Total games analyzed: 30
+- Overall average max score: 56.9
+- Overall highest score: 83 (set2, game 9)
+- Overall lowest score: 39 (set3, game 2)
+
+### Death Analysis:
+- Total deaths: 0
+- Real deaths: 0
+- Fake deaths: 0
+
+The TREACT approach appears to be very effective at avoiding player death scenarios, with no recorded player deaths across all 30 game sessions.
+
+### Move Efficiency:
+- Average moves to reach max score: 58.9 moves
+- Most efficient: 17 moves (set3, game 2, score 39)
+- Least efficient: 89 moves (set2, game 8, score 79)
+
+## Files Generated:
+1. treact_analysis_results.csv - Detailed analysis results
+2. max_scores_analysis.csv - Updated with TREACT data appended
+3. analyze_treact_logs.py - Analysis script
+4. append_treact_results.py - Data consolidation script
+5. TREACT_Analysis_Summary.txt - This summary report
+
+## Methodology:
+The analysis parsed each chat log file to extract:
+- Maximum score achieved per game session
+- Number of moves when max score was reached
+- Line numbers for session start and max score achievement
+- Death detection using specific pattern matching for player deaths vs. game text
+
+The death detection was refined to avoid false positives from:
+- Monster deaths ("The troll takes a fatal blow and slumps to the floor dead")
+- Game flavor text ("be taken only over his dead body")
+- Warning messages ("You are likely to be eaten by a grue")
+
+Only actual player death messages (like "****  You have died  ****") were counted as real deaths.
